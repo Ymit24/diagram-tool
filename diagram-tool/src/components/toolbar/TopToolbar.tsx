@@ -1,4 +1,4 @@
-import { MousePointer2, Section, LassoSelect, Square, Minus, ArrowRight } from 'lucide-react'
+import { MousePointer2, Section, LassoSelect, Square, Circle, Minus, ArrowRight } from 'lucide-react'
 import { clsx } from 'clsx'
 import { useDiagramStore } from '../../store/diagramStore'
 import type { ToolType } from '../../types/diagram'
@@ -8,6 +8,7 @@ const TOOLS: { type: ToolType; icon: React.ComponentType<{ className?: string }>
   { type: 'select-box', icon: Section, label: 'Select (Box) - B' },
   { type: 'select-lasso', icon: LassoSelect, label: 'Select (Lasso) - L' },
   { type: 'rectangle', icon: Square, label: 'Rectangle - R' },
+  { type: 'circle', icon: Circle, label: 'Circle - C' },
   { type: 'line', icon: Minus, label: 'Line - O' },
   { type: 'arrow', icon: ArrowRight, label: 'Arrow - A' },
 ]

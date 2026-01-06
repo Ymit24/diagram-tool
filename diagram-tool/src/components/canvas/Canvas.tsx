@@ -2,7 +2,7 @@ import { useRef, useState, useCallback } from 'react'
 import type { DiagramShape } from '../../types/diagram'
 import { useDiagramStore } from '../../store/diagramStore'
 import { screenToCanvas } from '../../utils/coordinates'
-import { createRectangle, createLine, createArrow } from '../../utils/shape'
+import { createRectangle, createCircle, createLine, createArrow } from '../../utils/shape'
 import { hitTestPoint, hitTestBox, hitTestLasso } from '../../utils/hitTest'
 import { ShapeRenderer } from '../shapes'
 
@@ -145,6 +145,15 @@ export function Canvas() {
           currentToolOptions
         )
         break
+      case 'circle':
+        newShape = createCircle(
+          Math.min(startX, x),
+          Math.min(startY, y),
+          Math.abs(x - startX),
+          Math.abs(y - startY),
+          currentToolOptions
+        )
+        break
       case 'line':
         newShape = createLine(startX, startY, x, y, currentToolOptions)
         break
@@ -225,7 +234,7 @@ export function Canvas() {
           const deltaY = drawing.currentY - drawing.startY
           const tempShape = {
             id: 'temp',
-            type: drawing.tool as 'rectangle' | 'line' | 'arrow',
+            type: drawing.tool as 'rectangle' | 'circle' | 'line' | 'arrow',
             x: isLineOrArrow ? drawing.startX : Math.min(drawing.startX, drawing.currentX),
             y: isLineOrArrow ? drawing.startY : Math.min(drawing.startY, drawing.currentY),
             width: Math.abs(deltaX),

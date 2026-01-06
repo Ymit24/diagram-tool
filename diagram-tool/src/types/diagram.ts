@@ -1,10 +1,11 @@
-export type ShapeType = 'rectangle' | 'line' | 'arrow'
+export type ShapeType = 'rectangle' | 'circle' | 'line' | 'arrow'
 
 export type ToolType =
   | 'select-click'
   | 'select-box'
   | 'select-lasso'
   | 'rectangle'
+  | 'circle'
   | 'line'
   | 'arrow'
 
@@ -35,6 +36,10 @@ export interface Rectangle extends BaseShape {
   type: 'rectangle'
 }
 
+export interface Circle extends BaseShape {
+  type: 'circle'
+}
+
 export interface Line extends BaseShape {
   type: 'line'
   x2: number
@@ -48,7 +53,7 @@ export interface Arrow extends BaseShape {
   arrowEnd: 'start' | 'end' | 'both'
 }
 
-export type DiagramShape = Rectangle | Line | Arrow
+export type DiagramShape = Rectangle | Circle | Line | Arrow
 
 export interface Selection {
   shapeIds: string[]
