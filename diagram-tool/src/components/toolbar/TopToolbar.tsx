@@ -1,63 +1,270 @@
-import { MousePointer2, Section, LassoSelect, Square, Circle, Minus, ArrowRight } from 'lucide-react'
+import { useState, useCallback } from 'react'
+import { MousePointer2, Square, Circle, Minus, ArrowRight, Undo2, Redo2, Copy, Trash2 } from 'lucide-react'
 import { clsx } from 'clsx'
 import { useDiagramStore } from '../../store/diagramStore'
 import type { ToolType } from '../../types/diagram'
+import { LAYOUT } from '../../constants/layout'
 
-const TOOLS: { type: ToolType; icon: React.ComponentType<{ className?: string }>; label: string }[] = [
-  { type: 'select-click', icon: MousePointer2, label: 'Select (Click) - V' },
-  { type: 'select-box', icon: Section, label: 'Select (Box) - B' },
-  { type: 'select-lasso', icon: LassoSelect, label: 'Select (Lasso) - L' },
-  { type: 'rectangle', icon: Square, label: 'Rectangle - R' },
-  { type: 'circle', icon: Circle, label: 'Circle - C' },
-  { type: 'line', icon: Minus, label: 'Line - O' },
-  { type: 'arrow', icon: ArrowRight, label: 'Arrow - A' },
+const DRAWING_TOOLS: { type: ToolType; icon: React.ComponentType<{ className?: string }>; label: string; shortcut: string }[] = [
+  { type: 'select-click', icon: MousePointer2, label: 'Select', shortcut: 'V' },
+  { type: 'rectangle', icon: Square, label: 'Rectangle', shortcut: 'R' },
+  { type: 'circle', icon: Circle, label: 'Circle', shortcut: 'C' },
+  { type: 'line', icon: Minus, label: 'Line', shortcut: 'O' },
+  { type: 'arrow', icon: ArrowRight, label: 'Arrow', shortcut: 'A' },
 ]
 
 export function TopToolbar() {
-  const { currentTool, setTool } = useDiagramStore()
+  const { 
+    currentTool, 
+    setTool, 
+    selection,
+    deleteShapes,
+    shapes,
+    viewport,
+    setViewport
+  } = useDiagramStore()
+
+  const [isHovered, setIsHovered] = useState(false)
+
+  const handleUndo = useCallback(() => {
+    console.log('Undo')
+  }, [])
+
+  const handleRedo = useCallback(() => {
+    console.log('Redo')
+  }, [])
+
+  const handleDelete = useCallback(() => {
+    if (selection.shapeIds.length > 0) {
+      deleteShapes(selection.shapeIds)
+    }
+  }, [selection.shapeIds, deleteShapes])
+
+  const handleZoomIn = useCallback(() => {
+    setViewport({ zoom: Math.min(viewport.zoom * 1.2, 5) })
+  }, [viewport.zoom, setViewport])
+
+  const handleZoomOut = useCallback(() => {
+    setViewport({ zoom: Math.max(viewport.zoom / 1.2, 0.1) })
+  }, [viewport.zoom, setViewport])
+
+  const handleZoomReset = useCallback(() => {
+    setViewport({ zoom: 1 })
+  }, [setViewport])
+
+  const shapeCount = shapes.length
 
   return (
-    <div className="fixed top-0 left-0 right-0 h-14 bg-white border-b border-gray-200 px-4 flex items-center gap-1 z-50">
-      <div className="flex items-center gap-1 pr-4 border-r border-gray-200">
-        {TOOLS.map(({ type, icon: Icon, label }) => (
-          <ToolButton
-            key={type}
-            icon={Icon}
-            active={currentTool === type}
-            onClick={() => setTool(type)}
-            label={label}
+    <div 
+      className="fixed top-4 left-1/2 -translate-x-1/2 z-50"
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
+      <div 
+        className={clsx(
+          'flex items-center gap-1 px-2 py-1.5',
+          'bg-white/95 backdrop-blur-xl',
+          'border border-gray-200/50',
+          'transition-all duration-300 ease-out',
+          'shadow-lg shadow-gray-900/5',
+        )}
+        style={{ 
+          borderRadius: LAYOUT.floatingToolbar.borderRadius,
+          height: LAYOUT.floatingToolbar.height,
+        }}
+      >
+        <ToolbarGroup>
+          <IconButton 
+            icon={Undo2} 
+            label="Undo" 
+            onClick={handleUndo}
+            disabled={shapeCount === 0}
           />
-        ))}
+          <IconButton 
+            icon={Redo2} 
+            label="Redo" 
+            onClick={handleRedo}
+            disabled={shapeCount === 0}
+          />
+        </ToolbarGroup>
+
+        <ToolbarDivider />
+
+        <ToolbarGroup>
+          {DRAWING_TOOLS.map(({ type, icon: Icon, label, shortcut }) => (
+            <ToolButton
+              key={type}
+              icon={Icon}
+              label={label}
+              shortcut={shortcut}
+              active={currentTool === type}
+              onClick={() => setTool(type)}
+            />
+          ))}
+        </ToolbarGroup>
+
+        <ToolbarDivider />
+
+        <ToolbarGroup>
+          <IconButton 
+            icon={Copy} 
+            label="Duplicate" 
+            onClick={() => console.log('Duplicate')}
+            disabled={selection.shapeIds.length !== 1}
+          />
+          <IconButton 
+            icon={Trash2} 
+            label="Delete" 
+            onClick={handleDelete}
+            disabled={selection.shapeIds.length === 0}
+            danger
+          />
+        </ToolbarGroup>
+
+        <ToolbarDivider />
+
+        <ToolbarGroup>
+          <IconButton 
+            icon={Minus} 
+            label="Zoom Out" 
+            onClick={handleZoomOut}
+            size="small"
+          />
+          <ZoomDisplay zoom={viewport.zoom} onClick={handleZoomReset} />
+          <IconButton 
+            icon={Plus} 
+            label="Zoom In" 
+            onClick={handleZoomIn}
+            size="small"
+          />
+        </ToolbarGroup>
       </div>
-      <div className="flex-1" />
-      <span className="text-sm text-gray-500">Phase 6: Selection System</span>
     </div>
+  )
+}
+
+function IconButton({
+  icon: Icon,
+  label,
+  onClick,
+  disabled = false,
+  danger = false,
+  size = 'normal'
+}: {
+  icon: React.ComponentType<{ className?: string }>
+  label: string
+  onClick?: () => void
+  disabled?: boolean
+  danger?: boolean
+  size?: 'small' | 'normal'
+}) {
+  return (
+    <button
+      className={clsx(
+        'flex items-center justify-center',
+        'transition-all duration-200',
+        'rounded-lg',
+        size === 'small' ? 'w-7 h-7' : 'w-8 h-8',
+        disabled 
+          ? 'opacity-40 cursor-not-allowed' 
+          : clsx(
+              danger 
+                ? 'text-red-500 hover:bg-red-50' 
+                : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900',
+              'cursor-pointer'
+            )
+      )}
+      onClick={onClick}
+      disabled={disabled}
+      title={label}
+    >
+      <Icon className={size === 'small' ? 'w-4 h-4' : 'w-4.5 h-4.5'} />
+    </button>
   )
 }
 
 function ToolButton({
   icon: Icon,
+  label,
+  shortcut,
   active,
-  onClick,
-  label
+  onClick
 }: {
   icon: React.ComponentType<{ className?: string }>
+  label: string
+  shortcut: string
   active?: boolean
   onClick?: () => void
-  label: string
 }) {
   return (
     <button
       className={clsx(
-        'p-2 rounded-lg transition-colors',
+        'flex items-center justify-center',
+        'w-9 h-9',
+        'transition-all duration-200',
+        'rounded-lg',
+        'relative',
         active
-          ? 'bg-blue-100 text-blue-600'
-          : 'hover:bg-gray-100 text-gray-600'
+          ? 'bg-gray-900 text-white shadow-md'
+          : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900',
+        'cursor-pointer'
       )}
       onClick={onClick}
-      title={label}
+      title={`${label} (${shortcut})`}
     >
-      <Icon className="w-5 h-5" />
+      <Icon className="w-4.5 h-4.5" />
+      <span className={clsx(
+        'absolute -bottom-3 left-1/2 -translate-x-1/2',
+        'text-[10px] font-medium',
+        'opacity-0 transition-opacity duration-150',
+        active ? 'text-gray-900' : 'text-gray-400',
+        'group-hover:opacity-100'
+      )}>
+        {shortcut}
+      </span>
     </button>
+  )
+}
+
+function ToolbarGroup({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="flex items-center gap-0.5 px-1">
+      {children}
+    </div>
+  )
+}
+
+function ToolbarDivider() {
+  return (
+    <div className="w-px h-5 bg-gray-200 mx-1" />
+  )
+}
+
+function ZoomDisplay({ zoom, onClick }: { zoom: number; onClick?: () => void }) {
+  return (
+    <button
+      className={clsx(
+        'flex items-center justify-center',
+        'min-w-[52px] h-7 px-2',
+        'text-xs font-medium',
+        'text-gray-600',
+        'bg-gray-50 hover:bg-gray-100',
+        'rounded-md',
+        'cursor-pointer transition-colors duration-150',
+        'border border-gray-200'
+      )}
+      onClick={onClick}
+    >
+      {Math.round(zoom * 100)}%
+    </button>
+  )
+}
+
+function Plus({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="12" y1="5" x2="12" y2="19" />
+      <line x1="5" y1="12" x2="19" y2="12" />
+    </svg>
   )
 }

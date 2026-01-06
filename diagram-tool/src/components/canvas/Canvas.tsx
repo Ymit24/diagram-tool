@@ -5,6 +5,8 @@ import { screenToCanvas } from '../../utils/coordinates'
 import { createRectangle, createCircle, createLine, createArrow } from '../../utils/shape'
 import { hitTestPoint, hitTestBox, hitTestLasso } from '../../utils/hitTest'
 import { ShapeRenderer } from '../shapes'
+import { ZoomControls } from './ZoomControls'
+import { CANVAS_GRID } from '../../constants/layout'
 
 interface Point { x: number; y: number }
 
@@ -195,7 +197,8 @@ export function Canvas() {
   } : null
 
   return (
-    <div className="w-full h-full overflow-hidden bg-gray-50">
+    <div className="w-full h-full overflow-hidden bg-gray-50 relative">
+      <ZoomControls />
       <svg
         ref={canvasRef}
         width="100%"
@@ -207,13 +210,13 @@ export function Canvas() {
         onMouseLeave={handleMouseUp}
       >
         <defs>
-          <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
-            <circle cx="1" cy="1" r="1" fill="#E5E7EB" />
+          <pattern id="grid" width={CANVAS_GRID.smallGridSize} height={CANVAS_GRID.smallGridSize} patternUnits="userSpaceOnUse">
+            <circle cx={CANVAS_GRID.smallDotSize} cy={CANVAS_GRID.smallDotSize} r={CANVAS_GRID.smallDotSize} fill={CANVAS_GRID.dotColor} />
           </pattern>
-          <pattern id="grid-large" width="100" height="100" patternUnits="userSpaceOnUse">
-            <rect width="100" height="100" fill="url(#grid)" />
-            <line x1="100" y1="0" x2="100" y2="100" stroke="#D1D5DB" strokeWidth="1" />
-            <line x1="0" y1="100" x2="100" y2="100" stroke="#D1D5DB" strokeWidth="1" />
+          <pattern id="grid-large" width={CANVAS_GRID.largeGridSize} height={CANVAS_GRID.largeGridSize} patternUnits="userSpaceOnUse">
+            <rect width={CANVAS_GRID.largeGridSize} height={CANVAS_GRID.largeGridSize} fill="url(#grid)" />
+            <line x1={CANVAS_GRID.largeGridSize} y1="0" x2={CANVAS_GRID.largeGridSize} y2={CANVAS_GRID.largeGridSize} stroke={CANVAS_GRID.lineColor} strokeWidth="1" />
+            <line x1="0" y1={CANVAS_GRID.largeGridSize} x2={CANVAS_GRID.largeGridSize} y2={CANVAS_GRID.largeGridSize} stroke={CANVAS_GRID.lineColor} strokeWidth="1" />
           </pattern>
         </defs>
 

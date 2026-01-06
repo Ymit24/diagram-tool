@@ -6,10 +6,8 @@ export function App() {
   return (
     <div className="w-screen h-screen overflow-hidden bg-gray-50">
       <TopToolbar />
-      <div className="absolute inset-0 top-14">
-        <Canvas />
-      </div>
       <ToolOptionsPanel />
+      <Canvas />
     </div>
   )
 }
