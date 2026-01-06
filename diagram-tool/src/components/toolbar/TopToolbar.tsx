@@ -1,13 +1,13 @@
-import { MousePointer2, Square, Circle, Minus, ArrowRight, LassoSelect } from 'lucide-react'
+import { MousePointer2, Section, LassoSelect, Square, Minus, ArrowRight } from 'lucide-react'
 import { clsx } from 'clsx'
 import { useDiagramStore } from '../../store/diagramStore'
 import type { ToolType } from '../../types/diagram'
 
 const TOOLS: { type: ToolType; icon: React.ComponentType<{ className?: string }>; label: string }[] = [
   { type: 'select-click', icon: MousePointer2, label: 'Select (Click) - V' },
-  { type: 'select-box', icon: LassoSelect, label: 'Select (Box) - B' },
+  { type: 'select-box', icon: Section, label: 'Select (Box) - B' },
+  { type: 'select-lasso', icon: LassoSelect, label: 'Select (Lasso) - L' },
   { type: 'rectangle', icon: Square, label: 'Rectangle - R' },
-  { type: 'circle', icon: Circle, label: 'Circle - C' },
   { type: 'line', icon: Minus, label: 'Line - O' },
   { type: 'arrow', icon: ArrowRight, label: 'Arrow - A' },
 ]
@@ -29,7 +29,7 @@ export function TopToolbar() {
         ))}
       </div>
       <div className="flex-1" />
-      <span className="text-sm text-gray-500">Phase 5: Tool System</span>
+      <span className="text-sm text-gray-500">Phase 6: Selection System</span>
     </div>
   )
 }

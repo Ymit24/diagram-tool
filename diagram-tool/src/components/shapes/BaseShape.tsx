@@ -23,14 +23,15 @@ export function BaseShape({ children, x, y, width, height, selected, onClick }: 
       {children}
       {selected && (
         <rect
-          x={-2}
-          y={-2}
-          width={width + 4}
-          height={height + 4}
+          x={0}
+          y={0}
+          width={width}
+          height={height}
           fill="none"
           stroke="#3B82F6"
           strokeWidth={1}
           strokeDasharray="4 2"
+          pointerEvents="none"
         />
       )}
     </g>
