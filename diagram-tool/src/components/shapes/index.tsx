@@ -3,11 +3,16 @@ import { Rectangle } from './Rectangle'
 import { Circle } from './Circle'
 import { Line } from './Line'
 import { Arrow } from './Arrow'
+import { ResizeHandles } from '../handles/ResizeHandles'
 
 interface ShapeRendererProps {
   shape: DiagramShape
   selected?: boolean
   onClick?: (e: React.MouseEvent) => void
+}
+
+interface SelectedShapeRendererProps extends ShapeRendererProps {
+  onResizeStart?: (e: React.MouseEvent, handle: string) => void
 }
 
 export function ShapeRenderer({ shape, selected, onClick }: ShapeRendererProps) {
@@ -23,4 +28,18 @@ export function ShapeRenderer({ shape, selected, onClick }: ShapeRendererProps) 
     default:
       return null
   }
+}
+
+export function SelectedShapeRenderer({ shape, selected, onClick, onResizeStart }: SelectedShapeRendererProps) {
+  return (
+    <g>
+      <ShapeRenderer shape={shape} selected={selected} onClick={onClick} />
+      {selected && onResizeStart && (
+        <ResizeHandles
+          shape={shape}
+          onResizeStart={onResizeStart}
+        />
+      )}
+    </g>
+  )
 }

@@ -4,7 +4,7 @@ import { useDiagramStore } from '../../store/diagramStore'
 import { screenToCanvas } from '../../utils/coordinates'
 import { createRectangle, createCircle, createLine, createArrow } from '../../utils/shape'
 import { hitTestPoint, hitTestBox, hitTestLasso } from '../../utils/hitTest'
-import { ShapeRenderer } from '../shapes'
+import { SelectedShapeRenderer } from '../shapes'
 import { ZoomControls } from './ZoomControls'
 import { CANVAS_GRID } from '../../constants/layout'
 
@@ -29,6 +29,9 @@ export function Canvas() {
     updateDrawing,
     finishDrawing,
     updateShape,
+    startResize,
+    updateResize,
+    endResize,
   } = useDiagramStore()
 
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
@@ -99,6 +102,25 @@ export function Canvas() {
       }
     }
   }, [dragStartPos, currentTool, drawing.isDrawing, viewport, shapes, selection.shapeIds, updateDrawing])
+
+  const handleMouseMoveWithResize = useCallback((e: React.MouseEvent) => {
+    if (!canvasRef.current) return
+
+    const rect = canvasRef.current.getBoundingClientRect()
+    const { x, y } = screenToCanvas(e.clientX, e.clientY, viewport, rect)
+
+    const {
+      resizingShapeId,
+      resizeStartShape,
+    } = useDiagramStore.getState()
+
+    if (resizingShapeId && resizeStartShape) {
+      updateResize(x, y)
+      return
+    }
+
+    handleMouseMove(e)
+  }, [handleMouseMove, updateResize, viewport])
 
   const handleMouseUp = useCallback((e: React.MouseEvent) => {
     if (!canvasRef.current) return
@@ -174,6 +196,19 @@ export function Canvas() {
     setLassoPointsForRender([])
   }, [drawing, viewport, shapes, currentToolOptions, addShape, finishDrawing, setSelection])
 
+  const handleMouseUpWithResize = useCallback((e: React.MouseEvent) => {
+    const {
+      resizingShapeId,
+    } = useDiagramStore.getState()
+
+    if (resizingShapeId) {
+      endResize()
+      return
+    }
+
+    handleMouseUp(e)
+  }, [handleMouseUp, endResize])
+
   const handleShapeClick = useCallback((e: React.MouseEvent, shapeId: string) => {
     e.stopPropagation()
 
@@ -183,6 +218,14 @@ export function Canvas() {
       setSelection({ shapeIds: [shapeId], selectionType: 'single' })
     }
   }, [currentTool, selection.shapeIds, setSelection])
+
+  const handleResizeMouseDown = useCallback((e: React.MouseEvent, handle: string) => {
+    e.stopPropagation()
+
+    if (selection.shapeIds.length === 1) {
+      startResize(selection.shapeIds[0], handle)
+    }
+  }, [selection, startResize])
 
   const buildLassoPath = (points: Point[]): string => {
     if (points.length === 0) return ''
@@ -205,9 +248,9 @@ export function Canvas() {
         height="100%"
         className="w-full h-full cursor-crosshair"
         onMouseDown={handleMouseDown}
-        onMouseMove={handleMouseMove}
-        onMouseUp={handleMouseUp}
-        onMouseLeave={handleMouseUp}
+        onMouseMove={handleMouseMoveWithResize}
+        onMouseUp={handleMouseUpWithResize}
+        onMouseLeave={handleMouseUpWithResize}
       >
         <defs>
           <pattern id="grid" width={CANVAS_GRID.smallGridSize} height={CANVAS_GRID.smallGridSize} patternUnits="userSpaceOnUse">
@@ -223,11 +266,12 @@ export function Canvas() {
         <rect width="100%" height="100%" fill="url(#grid-large)" />
 
         {shapes.map((shape) => (
-          <ShapeRenderer
+          <SelectedShapeRenderer
             key={shape.id}
             shape={shape}
             selected={selection.shapeIds.includes(shape.id)}
             onClick={(e) => handleShapeClick(e, shape.id)}
+            onResizeStart={handleResizeMouseDown}
           />
         ))}
 
@@ -247,7 +291,7 @@ export function Canvas() {
             rotation: 0,
             style: currentToolOptions,
           } as DiagramShape
-          return <ShapeRenderer shape={tempShape} />
+          return <SelectedShapeRenderer shape={tempShape} />
         })()}
 
         {drawing.isDrawing && drawing.tool === 'select-box' && selectionBox && (
