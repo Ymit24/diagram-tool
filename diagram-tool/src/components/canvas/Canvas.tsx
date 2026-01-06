@@ -1,4 +1,5 @@
-import { useRef, useState, useCallback } from 'react'
+import { useRef, useState, useCallback, useEffect } from 'react'
+import { clsx } from 'clsx'
 import type { DiagramShape } from '../../types/diagram'
 import { useDiagramStore } from '../../store/diagramStore'
 import { screenToCanvas } from '../../utils/coordinates'
@@ -15,6 +16,9 @@ export function Canvas() {
   const lassoPointsRef = useRef<Point[]>([])
   const [lassoPointsForRender, setLassoPointsForRender] = useState<Point[]>([])
   const [dragStartPos, setDragStartPos] = useState<Point | null>(null)
+  const [isPanning, setIsPanning] = useState(false)
+  const panStartRef = useRef<Point | null>(null)
+  const panStartViewportRef = useRef({ x: 0, y: 0 })
 
   const {
     shapes,
@@ -32,9 +36,55 @@ export function Canvas() {
     startResize,
     updateResize,
     endResize,
+    setViewport,
   } = useDiagramStore()
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.code === 'Space' && !isPanning) {
+        e.preventDefault()
+        setIsPanning(true)
+      }
+    }
+
+    const handleKeyUp = (e: KeyboardEvent) => {
+      if (e.code === 'Space') {
+        e.preventDefault()
+        setIsPanning(false)
+        panStartRef.current = null
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    window.addEventListener('keyup', handleKeyUp)
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown)
+      window.removeEventListener('keyup', handleKeyUp)
+    }
+  }, [isPanning])
+
+  const handleWheel = useCallback((e: React.WheelEvent) => {
+    if (e.ctrlKey || e.metaKey) {
+      e.preventDefault()
+      const delta = e.deltaY > 0 ? 0.9 : 1.1
+      const newZoom = Math.min(Math.max(viewport.zoom * delta, 0.1), 5)
+      setViewport({ zoom: newZoom })
+    } else {
+      setViewport({
+        x: viewport.x - e.deltaX,
+        y: viewport.y - e.deltaY
+      })
+    }
+  }, [viewport, setViewport])
+
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    if (isPanning) {
+      panStartRef.current = { x: e.clientX, y: e.clientY }
+      panStartViewportRef.current = { x: viewport.x, y: viewport.y }
+      return
+    }
+
     if (!canvasRef.current) return
 
     const rect = canvasRef.current.getBoundingClientRect()
@@ -69,9 +119,19 @@ export function Canvas() {
     }
 
     startDrawing(currentTool, x, y)
-  }, [currentTool, viewport, shapes, selection.shapeIds, startDrawing, setSelection])
+  }, [isPanning, currentTool, viewport, shapes, selection.shapeIds, startDrawing, setSelection])
 
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
+    if (isPanning && panStartRef.current) {
+      const dx = e.clientX - panStartRef.current.x
+      const dy = e.clientY - panStartRef.current.y
+      setViewport({
+        x: panStartViewportRef.current.x + dx,
+        y: panStartViewportRef.current.y + dy,
+      })
+      return
+    }
+
     if (!canvasRef.current) return
 
     const rect = canvasRef.current.getBoundingClientRect()
@@ -101,7 +161,7 @@ export function Canvas() {
         setLassoPointsForRender([...lassoPointsRef.current])
       }
     }
-  }, [dragStartPos, currentTool, drawing.isDrawing, viewport, shapes, selection.shapeIds, updateDrawing])
+  }, [isPanning, dragStartPos, currentTool, drawing.isDrawing, viewport, shapes, selection.shapeIds, updateDrawing, setViewport])
 
   const handleMouseMoveWithResize = useCallback((e: React.MouseEvent) => {
     if (!canvasRef.current) return
@@ -123,6 +183,11 @@ export function Canvas() {
   }, [handleMouseMove, updateResize, viewport])
 
   const handleMouseUp = useCallback((e: React.MouseEvent) => {
+    if (isPanning) {
+      panStartRef.current = null
+      return
+    }
+
     if (!canvasRef.current) return
 
     setDragStartPos(null)
@@ -246,11 +311,15 @@ export function Canvas() {
         ref={canvasRef}
         width="100%"
         height="100%"
-        className="w-full h-full cursor-crosshair"
+        className={clsx(
+          'w-full h-full',
+          isPanning ? 'cursor-grab active:cursor-grabbing' : 'cursor-crosshair'
+        )}
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMoveWithResize}
         onMouseUp={handleMouseUpWithResize}
         onMouseLeave={handleMouseUpWithResize}
+        onWheel={handleWheel}
       >
         <defs>
           <pattern id="grid" width={CANVAS_GRID.smallGridSize} height={CANVAS_GRID.smallGridSize} patternUnits="userSpaceOnUse">
