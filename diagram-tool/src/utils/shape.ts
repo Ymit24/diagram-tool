@@ -22,34 +22,30 @@ export function createCircle(x: number, y: number, width: number, height: number
 }
 
 export function createLine(x: number, y: number, x2: number, y2: number, style: ShapeStyle): Line {
-  const minX = Math.min(x, x2)
-  const minY = Math.min(y, y2)
   return {
     id: uuidv4(),
     type: 'line',
-    x: minX,
-    y: minY,
+    x,
+    y,
     width: Math.abs(x2 - x),
     height: Math.abs(y2 - y),
-    x2: x2 - minX,
-    y2: y2 - minY,
+    x2: x2 - x,
+    y2: y2 - y,
     rotation: 0,
     style,
   }
 }
 
 export function createArrow(x: number, y: number, x2: number, y2: number, style: ShapeStyle): Arrow {
-  const minX = Math.min(x, x2)
-  const minY = Math.min(y, y2)
   return {
     id: uuidv4(),
     type: 'arrow',
-    x: minX,
-    y: minY,
+    x,
+    y,
     width: Math.abs(x2 - x),
     height: Math.abs(y2 - y),
-    x2: x2 - minX,
-    y2: y2 - minY,
+    x2: x2 - x,
+    y2: y2 - y,
     arrowEnd: 'end',
     rotation: 0,
     style,

@@ -230,17 +230,17 @@ export function Canvas() {
 
         {drawing.isDrawing && drawing.tool !== 'select-click' && drawing.tool !== 'select-box' && drawing.tool !== 'select-lasso' && (() => {
           const isLineOrArrow = drawing.tool === 'line' || drawing.tool === 'arrow'
-          const originX = Math.min(drawing.startX, drawing.currentX)
-          const originY = Math.min(drawing.startY, drawing.currentY)
+          const deltaX = drawing.currentX - drawing.startX
+          const deltaY = drawing.currentY - drawing.startY
           const tempShape = {
             id: 'temp',
             type: drawing.tool as 'rectangle' | 'circle' | 'line' | 'arrow',
-            x: originX,
-            y: originY,
-            width: Math.abs(drawing.currentX - drawing.startX),
-            height: Math.abs(drawing.currentY - drawing.startY),
-            x2: isLineOrArrow ? drawing.currentX - originX : 0,
-            y2: isLineOrArrow ? drawing.currentY - originY : 0,
+            x: isLineOrArrow ? drawing.startX : Math.min(drawing.startX, drawing.currentX),
+            y: isLineOrArrow ? drawing.startY : Math.min(drawing.startY, drawing.currentY),
+            width: Math.abs(deltaX),
+            height: Math.abs(deltaY),
+            x2: isLineOrArrow ? deltaX : 0,
+            y2: isLineOrArrow ? deltaY : 0,
             rotation: 0,
             style: currentToolOptions,
           } as DiagramShape
