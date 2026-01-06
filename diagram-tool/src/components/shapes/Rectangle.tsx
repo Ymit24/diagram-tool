@@ -8,10 +8,10 @@ interface RectangleProps {
 }
 
 export function Rectangle({ shape, selected, onClick }: RectangleProps) {
-  const { width, height, style } = shape
+  const { x, y, width, height, style } = shape
 
   return (
-    <BaseShape x={0} y={0} width={width} height={height} selected={selected} onClick={onClick}>
+    <BaseShape x={x} y={y} width={width} height={height} selected={selected} onClick={onClick}>
       <rect
         x={0}
         y={0}

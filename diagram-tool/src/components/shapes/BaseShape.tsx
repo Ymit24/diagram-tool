@@ -14,7 +14,10 @@ export function BaseShape({ children, x, y, width, height, selected, onClick }: 
   return (
     <g
       transform={`translate(${x}, ${y})`}
-      onClick={onClick}
+      onClick={(e) => {
+        e.stopPropagation()
+        onClick?.(e)
+      }}
       style={{ cursor: 'pointer' }}
     >
       {children}

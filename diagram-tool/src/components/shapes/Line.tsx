@@ -8,10 +8,10 @@ interface LineProps {
 }
 
 export function Line({ shape, selected, onClick }: LineProps) {
-  const { width, height, x2, y2, style } = shape
+  const { x, y, width, height, x2, y2, style } = shape
 
   return (
-    <BaseShape x={0} y={0} width={width} height={height} selected={selected} onClick={onClick}>
+    <BaseShape x={x} y={y} width={width} height={height} selected={selected} onClick={onClick}>
       <line
         x1={0}
         y1={0}

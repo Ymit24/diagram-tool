@@ -19,13 +19,13 @@ function ArrowHead({ x, y, angle, color, size }: { x: number; y: number; angle: 
 }
 
 export function Arrow({ shape, selected, onClick }: ArrowProps) {
-  const { x2, y2, arrowEnd, style } = shape
+  const { x, y, x2, y2, arrowEnd, style } = shape
 
   const angle = Math.atan2(y2, x2) * (180 / Math.PI)
   const arrowSize = 12
 
   return (
-    <BaseShape x={0} y={0} width={0} height={0} selected={selected} onClick={onClick}>
+    <BaseShape x={x} y={y} width={0} height={0} selected={selected} onClick={onClick}>
       <line
         x1={0}
         y1={0}
