@@ -2,15 +2,16 @@ interface ResizeHandleProps {
   x: number
   y: number
   cursor: string
+  handle: string
   onMouseDown: (e: React.MouseEvent, handle: string) => void
 }
 
-function ResizeHandle({ x, y, cursor, onMouseDown }: ResizeHandleProps) {
+function ResizeHandle({ x, y, cursor, handle, onMouseDown }: ResizeHandleProps) {
   return (
     <g
       transform={`translate(${x}, ${y})`}
       style={{ cursor }}
-      onMouseDown={(e) => onMouseDown(e, 'handle')}
+      onMouseDown={(e) => onMouseDown(e, handle)}
     >
       <rect
         x={-4}
@@ -42,19 +43,24 @@ export function ResizeHandles({ shape, onResizeStart }: ResizeHandlesProps) {
   const handles: React.ReactNode[] = []
 
   if (shape.type === 'line' || shape.type === 'arrow') {
+    const bboxX = Math.min(shape.x, shape.x + (shape.x2 || 0))
+    const bboxY = Math.min(shape.y, shape.y + (shape.y2 || 0))
+
     handles.push(
       <ResizeHandle
         key="start"
-        x={0}
-        y={0}
+        x={bboxX}
+        y={bboxY}
         cursor="nwse-resize"
+        handle="start"
         onMouseDown={onResizeStart}
       />,
       <ResizeHandle
         key="end"
-        x={shape.x2 || shape.width}
-        y={shape.y2 || shape.height}
+        x={bboxX + (shape.x2 || shape.width)}
+        y={bboxY + (shape.y2 || shape.height)}
         cursor="nwse-resize"
+        handle="end"
         onMouseDown={onResizeStart}
       />
     )
@@ -78,7 +84,8 @@ export function ResizeHandles({ shape, onResizeStart }: ResizeHandlesProps) {
           x={pos.x}
           y={pos.y}
           cursor={pos.cursor}
-          onMouseDown={(e) => onResizeStart(e, pos.handle)}
+          handle={pos.handle}
+          onMouseDown={onResizeStart}
         />
       )
     })
