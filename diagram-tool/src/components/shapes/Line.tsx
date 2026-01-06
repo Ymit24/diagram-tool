@@ -10,13 +10,20 @@ interface LineProps {
 export function Line({ shape, selected, onClick }: LineProps) {
   const { x, y, width, height, x2, y2, style } = shape
 
+  const bboxX = Math.min(x, x + x2)
+  const bboxY = Math.min(y, y + y2)
+  const baseX = x - bboxX
+  const baseY = y - bboxY
+  const headX = baseX + x2
+  const headY = baseY + y2
+
   return (
-    <BaseShape x={x} y={y} width={width} height={height} selected={selected} onClick={onClick}>
+    <BaseShape x={bboxX} y={bboxY} width={width} height={height} selected={selected} onClick={onClick}>
       <line
-        x1={0}
-        y1={0}
-        x2={x2}
-        y2={y2}
+        x1={baseX}
+        y1={baseY}
+        x2={headX}
+        y2={headY}
         stroke={style.stroke}
         strokeWidth={style.strokeWidth}
         strokeLinecap="round"
