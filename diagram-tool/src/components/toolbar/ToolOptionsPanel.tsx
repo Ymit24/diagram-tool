@@ -1,8 +1,10 @@
+import { useMemo } from 'react'
 import { useDiagramStore } from '../../store/diagramStore'
 import { DEFAULT_STROKE_COLORS, DEFAULT_FILL_COLORS, DEFAULT_STROKE_WIDTHS, ARROW_HEAD_STYLES } from '../../constants/colors'
 import { LAYOUT } from '../../constants/layout'
+import { getSelectedShapes, getCommonProperties, getShapeTypeLabel } from '../../utils/selection'
 import { clsx } from 'clsx'
-import { Palette, CircleDashed, ArrowLeft } from 'lucide-react'
+import { Palette, CircleDashed, ArrowLeft, Layers } from 'lucide-react'
 import type { ArrowHeadStyle } from '../../types/diagram'
 
 function Stroke({ className }: { className?: string }) {
@@ -14,10 +16,31 @@ function Stroke({ className }: { className?: string }) {
 }
 
 export function ToolOptionsPanel() {
-  const { currentToolOptions, updateToolOptions, currentTool } = useDiagramStore()
+  const { currentToolOptions, updateToolOptions, selection, shapes, updateSelectedShapes, currentTool } = useDiagramStore()
 
+  const selectedShapes = useMemo(() => 
+    getSelectedShapes(shapes, selection), 
+    [shapes, selection]
+  )
+
+  const commonProps = useMemo(() => 
+    getCommonProperties(selectedShapes),
+    [selectedShapes]
+  )
+
+  const hasSelection = selection.shapeIds.length > 0
   const isDrawingTool = ['rectangle', 'circle', 'line', 'arrow'].includes(currentTool)
   const isArrowTool = currentTool === 'arrow'
+
+  const panelTitle = hasSelection
+    ? selection.shapeIds.length === 1
+      ? `${getShapeTypeLabel(selectedShapes[0]?.type || '')} Properties`
+      : `${selection.shapeIds.length} Shapes Selected`
+    : 'Style Options'
+
+  const showArrowStyle = hasSelection
+    ? commonProps.allArrows
+    : isArrowTool
 
   return (
     <div 
@@ -39,12 +62,46 @@ export function ToolOptionsPanel() {
         )}
         style={{ height: LAYOUT.floatingPanel.headerHeight }}
         >
-          <Palette className="w-4 h-4 mr-2" />
-          Style Options
+          {hasSelection ? <Layers className="w-4 h-4 mr-2" /> : <Palette className="w-4 h-4 mr-2" />}
+          {panelTitle}
         </div>
 
         <div className="p-4 space-y-5">
-          {isDrawingTool ? (
+          {hasSelection ? (
+            <>
+              <ColorSection
+                title="Stroke Color"
+                colors={DEFAULT_STROKE_COLORS}
+                selected={commonProps.stroke}
+                mixed={commonProps.stroke === null}
+                onSelect={(stroke) => updateSelectedShapes({ stroke })}
+              />
+
+              <ColorSection
+                title="Fill Color"
+                colors={DEFAULT_FILL_COLORS}
+                selected={commonProps.fill}
+                mixed={commonProps.fill === null}
+                onSelect={(fill) => updateSelectedShapes({ fill })}
+              />
+
+              <StrokeWidthSection
+                widths={DEFAULT_STROKE_WIDTHS}
+                selected={commonProps.strokeWidth}
+                mixed={commonProps.strokeWidth === null}
+                onSelect={(strokeWidth) => updateSelectedShapes({ strokeWidth })}
+              />
+
+              {showArrowStyle && commonProps.allArrows && (
+                <ArrowHeadStyleSection
+                  styles={ARROW_HEAD_STYLES}
+                  selected={commonProps.arrowHeadStyle}
+                  mixed={commonProps.arrowHeadStyle === null}
+                  onSelect={(arrowHeadStyle) => updateSelectedShapes({ arrowHeadStyle })}
+                />
+              )}
+            </>
+          ) : isDrawingTool ? (
             <>
               <ColorSection
                 title="Stroke Color"
@@ -77,7 +134,7 @@ export function ToolOptionsPanel() {
           ) : (
             <div className="text-center py-8 text-gray-400 text-sm">
               <CircleDashed className="w-8 h-8 mx-auto mb-2 opacity-50" />
-              <p>Select a drawing tool to edit styles</p>
+              <p>Select a drawing tool or shapes to edit</p>
             </div>
           )}
         </div>
@@ -90,11 +147,13 @@ function ColorSection({
   title,
   colors,
   selected,
+  mixed = false,
   onSelect
 }: {
   title: string
   colors: { name: string; value: string }[]
-  selected: string
+  selected: string | null
+  mixed?: boolean
   onSelect: (value: string) => void
 }) {
   return (
@@ -102,6 +161,11 @@ function ColorSection({
       <div className="flex items-center mb-2.5">
         <Stroke className="w-3.5 h-3.5 mr-1.5 text-gray-400" />
         <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">{title}</span>
+        {mixed && (
+          <span className="ml-auto text-[10px] px-1.5 py-0.5 bg-amber-100 text-amber-700 rounded">
+            Mixed
+          </span>
+        )}
       </div>
       <div className="grid grid-cols-6 gap-1.5">
         {colors.map((color) => (
@@ -112,7 +176,7 @@ function ColorSection({
               'w-full aspect-square',
               'transition-all duration-150',
               'rounded-md border',
-              selected === color.value
+              (selected === color.value || (selected === null && !mixed))
                 ? 'border-gray-900 ring-1 ring-gray-900 ring-offset-1'
                 : 'border-gray-200 hover:border-gray-300',
               'cursor-pointer'
@@ -134,10 +198,12 @@ function ColorSection({
 function StrokeWidthSection({
   widths,
   selected,
+  mixed = false,
   onSelect
 }: {
   widths: number[]
-  selected: number
+  selected: number | null
+  mixed?: boolean
   onSelect: (value: number) => void
 }) {
   return (
@@ -145,6 +211,11 @@ function StrokeWidthSection({
       <div className="flex items-center mb-2.5">
         <CircleDashed className="w-3.5 h-3.5 mr-1.5 text-gray-400" />
         <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Stroke Width</span>
+        {mixed && (
+          <span className="ml-auto text-[10px] px-1.5 py-0.5 bg-amber-100 text-amber-700 rounded">
+            Mixed
+          </span>
+        )}
       </div>
       <div className="flex gap-1.5">
         {widths.map((width) => (
@@ -155,7 +226,7 @@ function StrokeWidthSection({
               'flex items-center justify-center',
               'transition-all duration-150',
               'rounded-md border',
-              selected === width
+              (selected === width || (selected === null && !mixed))
                 ? 'bg-gray-900 text-white border-gray-900'
                 : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300',
               'cursor-pointer'
@@ -176,10 +247,12 @@ function StrokeWidthSection({
 function ArrowHeadStyleSection({
   styles,
   selected,
+  mixed = false,
   onSelect
 }: {
   styles: readonly { name: string; value: string }[]
-  selected: ArrowHeadStyle
+  selected: ArrowHeadStyle | null
+  mixed?: boolean
   onSelect: (value: ArrowHeadStyle) => void
 }) {
   const renderPreview = (style: string, size: number = 12) => {
@@ -234,6 +307,11 @@ function ArrowHeadStyleSection({
       <div className="flex items-center mb-2.5">
         <ArrowLeft className="w-3.5 h-3.5 mr-1.5 text-gray-400" style={{ transform: 'rotate(0deg)' }} />
         <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Arrow Style</span>
+        {mixed && (
+          <span className="ml-auto text-[10px] px-1.5 py-0.5 bg-amber-100 text-amber-700 rounded">
+            Mixed
+          </span>
+        )}
       </div>
       <div className="grid grid-cols-3 gap-1.5">
         {styles.map((style) => (
@@ -244,7 +322,7 @@ function ArrowHeadStyleSection({
               'h-12',
               'transition-all duration-150',
               'rounded-md border',
-              selected === style.value
+              (selected === style.value || (selected === null && !mixed))
                 ? 'bg-gray-900 text-white border-gray-900'
                 : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300',
               'cursor-pointer'

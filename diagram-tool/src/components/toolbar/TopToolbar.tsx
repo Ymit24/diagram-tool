@@ -1,12 +1,17 @@
 import { useCallback } from 'react'
-import { MousePointer2, Square, Circle, Minus, ArrowRight, Undo2, Redo2, Copy, Trash2 } from 'lucide-react'
+import { MousePointer2, Square, Circle, Minus, ArrowRight, Undo2, Redo2, Copy, Trash2, Section, LassoSelect } from 'lucide-react'
 import { clsx } from 'clsx'
 import { useDiagramStore } from '../../store/diagramStore'
 import type { ToolType } from '../../types/diagram'
 import { LAYOUT } from '../../constants/layout'
 
-const DRAWING_TOOLS: { type: ToolType; icon: React.ComponentType<{ className?: string }>; label: string; shortcut: string }[] = [
+const SELECTION_TOOLS: { type: ToolType; icon: React.ComponentType<{ className?: string }>; label: string; shortcut: string }[] = [
   { type: 'select-click', icon: MousePointer2, label: 'Select', shortcut: 'V' },
+  { type: 'select-box', icon: Section, label: 'Box Select', shortcut: 'B' },
+  { type: 'select-lasso', icon: LassoSelect, label: 'Lasso Select', shortcut: 'L' },
+]
+
+const DRAWING_TOOLS: { type: ToolType; icon: React.ComponentType<{ className?: string }>; label: string; shortcut: string }[] = [
   { type: 'rectangle', icon: Square, label: 'Rectangle', shortcut: 'R' },
   { type: 'circle', icon: Circle, label: 'Circle', shortcut: 'C' },
   { type: 'line', icon: Minus, label: 'Line', shortcut: 'O' },
@@ -80,6 +85,21 @@ export function TopToolbar() {
             onClick={handleRedo}
             disabled={shapeCount === 0}
           />
+        </ToolbarGroup>
+
+        <ToolbarDivider />
+
+        <ToolbarGroup>
+          {SELECTION_TOOLS.map(({ type, icon: Icon, label, shortcut }) => (
+            <ToolButton
+              key={type}
+              icon={Icon}
+              label={label}
+              shortcut={shortcut}
+              active={currentTool === type}
+              onClick={() => setTool(type)}
+            />
+          ))}
         </ToolbarGroup>
 
         <ToolbarDivider />

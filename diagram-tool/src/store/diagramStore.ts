@@ -23,6 +23,7 @@ interface DiagramState {
   deleteShapes: (ids: string[]) => void
   setSelection: (selection: Partial<Selection>) => void
   updateToolOptions: (options: Partial<ShapeStyle>) => void
+  updateSelectedShapes: (updates: Partial<ShapeStyle>) => void
   startDrawing: (tool: ToolType, x: number, y: number) => void
   updateDrawing: (x: number, y: number) => void
   finishDrawing: () => void
@@ -68,6 +69,14 @@ export const useDiagramStore = create<DiagramState>((set) => ({
 
   updateToolOptions: (options) => set((state) => ({
     currentToolOptions: { ...state.currentToolOptions, ...options }
+  })),
+
+  updateSelectedShapes: (updates) => set((state) => ({
+    shapes: state.shapes.map((s) => 
+      state.selection.shapeIds.includes(s.id)
+        ? { ...s, style: { ...s.style, ...updates } }
+        : s
+    ) as DiagramShape[]
   })),
 
   startDrawing: (tool, x, y) => set({
