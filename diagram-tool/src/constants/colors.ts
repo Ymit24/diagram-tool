@@ -52,3 +52,12 @@ export const DEFAULT_FILL_COLORS = [
 ]
 
 export const DEFAULT_STROKE_WIDTHS = [1, 2, 4, 6, 8]
+
+export const ARROW_HEAD_STYLES = [
+  { name: 'Filled', value: 'filled' },
+  { name: 'Open', value: 'open' },
+  { name: 'Stealth', value: 'stealth' },
+  { name: 'Diamond', value: 'diamond' },
+  { name: 'Circle', value: 'circle' },
+  { name: 'Bar', value: 'bar' },
+] as const

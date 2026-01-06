@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useCallback } from 'react'
 import { MousePointer2, Square, Circle, Minus, ArrowRight, Undo2, Redo2, Copy, Trash2 } from 'lucide-react'
 import { clsx } from 'clsx'
 import { useDiagramStore } from '../../store/diagramStore'
@@ -23,8 +23,6 @@ export function TopToolbar() {
     viewport,
     setViewport
   } = useDiagramStore()
-
-  const [isHovered, setIsHovered] = useState(false)
 
   const handleUndo = useCallback(() => {
     console.log('Undo')
@@ -55,11 +53,7 @@ export function TopToolbar() {
   const shapeCount = shapes.length
 
   return (
-    <div 
-      className="fixed top-4 left-1/2 -translate-x-1/2 z-50"
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-    >
+    <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50">
       <div 
         className={clsx(
           'flex items-center gap-1 px-2 py-1.5',

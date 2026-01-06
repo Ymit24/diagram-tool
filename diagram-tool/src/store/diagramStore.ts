@@ -37,6 +37,7 @@ export const useDiagramStore = create<DiagramState>((set) => ({
     strokeWidth: 2,
     fill: 'transparent',
     background: null,
+    arrowHeadStyle: 'filled',
   },
   selection: { shapeIds: [], selectionType: 'none' },
   viewport: { x: 0, y: 0, zoom: 1 },

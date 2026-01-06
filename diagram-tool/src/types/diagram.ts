@@ -1,5 +1,7 @@
 export type ShapeType = 'rectangle' | 'circle' | 'line' | 'arrow'
 
+export type ArrowHeadStyle = 'filled' | 'open' | 'stealth' | 'diamond' | 'circle' | 'bar'
+
 export type ToolType =
   | 'select-click'
   | 'select-box'
@@ -19,6 +21,7 @@ export interface ShapeStyle {
   strokeWidth: number
   fill: string | null
   background: string | null
+  arrowHeadStyle: ArrowHeadStyle
 }
 
 export interface BaseShape {

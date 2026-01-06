@@ -1,21 +1,11 @@
 import type { Arrow as ArrowType } from '../../types/diagram'
 import { BaseShape } from './BaseShape'
+import { ArrowHead } from './ArrowHead'
 
 interface ArrowProps {
   shape: ArrowType
   selected?: boolean
   onClick?: (e: React.MouseEvent) => void
-}
-
-function ArrowHead({ x, y, angle, color, size }: { x: number; y: number; angle: number; color: string; size: number }) {
-  return (
-    <g transform={`translate(${x}, ${y}) rotate(${angle})`}>
-      <polygon
-        points={`0,0 ${-size},${-size/2} ${-size},${size/2}`}
-        fill={color}
-      />
-    </g>
-  )
 }
 
 export function Arrow({ shape, selected, onClick }: ArrowProps) {
@@ -31,6 +21,7 @@ export function Arrow({ shape, selected, onClick }: ArrowProps) {
   const angle = Math.atan2(y2, x2) * (180 / Math.PI)
   const arrowSize = 12
   const startAngle = Math.atan2(-y2, -x2) * (180 / Math.PI)
+  const arrowHeadStyle = style.arrowHeadStyle || 'filled'
 
   return (
     <BaseShape x={bboxX} y={bboxY} width={Math.abs(x2)} height={Math.abs(y2)} selected={selected} onClick={onClick}>
@@ -44,10 +35,10 @@ export function Arrow({ shape, selected, onClick }: ArrowProps) {
         strokeLinecap="round"
       />
       {(arrowEnd === 'end' || arrowEnd === 'both') && (
-        <ArrowHead x={headX} y={headY} angle={angle} color={style.stroke} size={arrowSize} />
+        <ArrowHead x={headX} y={headY} angle={angle} color={style.stroke} size={arrowSize} style={arrowHeadStyle} />
       )}
       {arrowEnd === 'both' && (
-        <ArrowHead x={baseX} y={baseY} angle={startAngle} color={style.stroke} size={arrowSize} />
+        <ArrowHead x={baseX} y={baseY} angle={startAngle} color={style.stroke} size={arrowSize} style={arrowHeadStyle} />
       )}
     </BaseShape>
   )
