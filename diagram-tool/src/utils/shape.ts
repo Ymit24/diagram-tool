@@ -1,20 +1,10 @@
-import type { Rectangle, Circle, Line, Arrow, ShapeStyle } from '../types/diagram'
+import type { Rectangle, Line, Arrow, ShapeStyle } from '../types/diagram'
 import { v4 as uuidv4 } from 'uuid'
 
 export function createRectangle(x: number, y: number, width: number, height: number, style: ShapeStyle): Rectangle {
   return {
     id: uuidv4(),
     type: 'rectangle',
-    x, y, width, height,
-    rotation: 0,
-    style,
-  }
-}
-
-export function createCircle(x: number, y: number, width: number, height: number, style: ShapeStyle): Circle {
-  return {
-    id: uuidv4(),
-    type: 'circle',
     x, y, width, height,
     rotation: 0,
     style,

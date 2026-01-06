@@ -3,14 +3,6 @@ import type { DiagramShape } from '../types/diagram'
 export function hitTestPoint(shape: DiagramShape, x: number, y: number): boolean {
   const padding = 5
 
-  if (shape.type === 'circle') {
-    const cx = shape.x + shape.width / 2
-    const cy = shape.y + shape.height / 2
-    const radius = shape.width / 2
-    const distance = Math.sqrt(Math.pow(x - cx, 2) + Math.pow(y - cy, 2))
-    return distance <= radius + padding
-  }
-
   return (
     x >= shape.x - padding &&
     x <= shape.x + shape.width + padding &&
