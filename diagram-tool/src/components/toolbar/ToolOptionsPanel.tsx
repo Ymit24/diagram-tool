@@ -1,10 +1,11 @@
-import { useMemo } from 'react'
+import { useMemo, useCallback } from 'react'
 import { useDiagramStore } from '../../store/diagramStore'
 import { DEFAULT_STROKE_COLORS, DEFAULT_FILL_COLORS, DEFAULT_STROKE_WIDTHS, ARROW_HEAD_STYLES } from '../../constants/colors'
 import { LAYOUT } from '../../constants/layout'
 import { getSelectedShapes, getCommonProperties, getShapeTypeLabel } from '../../utils/selection'
+import type { AlignmentType, DistributionType } from '../../utils/alignment'
 import { clsx } from 'clsx'
-import { Palette, CircleDashed, ArrowLeft, Layers } from 'lucide-react'
+import { Palette, CircleDashed, ArrowLeft, Layers, AlignStartVertical, AlignStartHorizontal, AlignCenter, AlignEndVertical, AlignEndHorizontal, AlignCenterVertical, AlignCenterHorizontal } from 'lucide-react'
 import type { ArrowHeadStyle } from '../../types/diagram'
 
 function Stroke({ className }: { className?: string }) {
@@ -16,7 +17,7 @@ function Stroke({ className }: { className?: string }) {
 }
 
 export function ToolOptionsPanel() {
-  const { currentToolOptions, updateToolOptions, selection, shapes, updateSelectedShapes, currentTool } = useDiagramStore()
+  const { currentToolOptions, updateToolOptions, selection, shapes, updateSelectedShapes, currentTool, alignShapes, distributeShapes } = useDiagramStore()
 
   const selectedShapes = useMemo(() => 
     getSelectedShapes(shapes, selection), 
@@ -31,6 +32,16 @@ export function ToolOptionsPanel() {
   const hasSelection = selection.shapeIds.length > 0
   const isDrawingTool = ['rectangle', 'circle', 'line', 'arrow'].includes(currentTool)
   const isArrowTool = currentTool === 'arrow'
+  const canAlign = selection.shapeIds.length >= 2
+  const canDistribute = selection.shapeIds.length >= 3
+
+  const handleAlign = useCallback((alignment: AlignmentType) => {
+    alignShapes(alignment)
+  }, [alignShapes])
+
+  const handleDistribute = useCallback((distribution: DistributionType) => {
+    distributeShapes(distribution)
+  }, [distributeShapes])
 
   const panelTitle = hasSelection
     ? selection.shapeIds.length === 1
@@ -100,6 +111,13 @@ export function ToolOptionsPanel() {
                   onSelect={(arrowHeadStyle) => updateSelectedShapes({ arrowHeadStyle })}
                 />
               )}
+
+              <AlignmentSection
+                canAlign={canAlign}
+                canDistribute={canDistribute}
+                onAlign={handleAlign}
+                onDistribute={handleDistribute}
+              />
             </>
           ) : isDrawingTool ? (
             <>
@@ -140,6 +158,167 @@ export function ToolOptionsPanel() {
         </div>
       </div>
     </div>
+  )
+}
+
+function AlignmentSection({
+  canAlign,
+  canDistribute,
+  onAlign,
+  onDistribute
+}: {
+  canAlign: boolean
+  canDistribute: boolean
+  onAlign: (alignment: AlignmentType) => void
+  onDistribute: (distribution: DistributionType) => void
+}) {
+  return (
+    <div>
+      <div className="flex items-center mb-2.5">
+        <AlignCenterHorizontal className="w-3.5 h-3.5 mr-1.5 text-gray-400" />
+        <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Alignment</span>
+      </div>
+      <div className="space-y-2">
+        <div className="flex gap-1">
+          <AlignmentButton
+            onClick={() => onAlign('left')}
+            disabled={!canAlign}
+            title="Align Left"
+          >
+            <AlignStartHorizontal className="w-4 h-4" />
+          </AlignmentButton>
+          <AlignmentButton
+            onClick={() => onAlign('center')}
+            disabled={!canAlign}
+            title="Align Center"
+          >
+            <AlignCenter className="w-4 h-4" />
+          </AlignmentButton>
+          <AlignmentButton
+            onClick={() => onAlign('right')}
+            disabled={!canAlign}
+            title="Align Right"
+          >
+            <AlignEndHorizontal className="w-4 h-4" />
+          </AlignmentButton>
+        </div>
+        <div className="flex gap-1">
+          <AlignmentButton
+            onClick={() => onAlign('top')}
+            disabled={!canAlign}
+            title="Align Top"
+          >
+            <AlignStartVertical className="w-4 h-4" />
+          </AlignmentButton>
+          <AlignmentButton
+            onClick={() => onAlign('middle')}
+            disabled={!canAlign}
+            title="Align Middle"
+          >
+            <AlignCenterVertical className="w-4 h-4" />
+          </AlignmentButton>
+          <AlignmentButton
+            onClick={() => onAlign('bottom')}
+            disabled={!canAlign}
+            title="Align Bottom"
+          >
+            <AlignEndVertical className="w-4 h-4" />
+          </AlignmentButton>
+        </div>
+        <div className="flex gap-1 pt-1 border-t border-gray-100">
+          <DistributionButton
+            onClick={() => onDistribute('horizontal')}
+            disabled={!canDistribute}
+            title="Distribute Horizontally"
+          >
+            <div className="flex flex-col items-center gap-0.5">
+              <div className="flex items-center gap-0.5">
+                <div className="w-1.5 h-1.5 bg-current rounded-full" />
+                <div className="w-1.5 h-1.5 bg-current rounded-full" />
+                <div className="w-1.5 h-1.5 bg-current rounded-full" />
+              </div>
+              <AlignCenterHorizontal className="w-3 h-3" />
+            </div>
+          </DistributionButton>
+          <DistributionButton
+            onClick={() => onDistribute('vertical')}
+            disabled={!canDistribute}
+            title="Distribute Vertically"
+          >
+            <div className="flex flex-col items-center gap-0.5">
+              <AlignCenterVertical className="w-3 h-3" />
+              <div className="flex flex-col items-center gap-0.5">
+                <div className="w-1.5 h-1.5 bg-current rounded-full" />
+                <div className="w-1.5 h-1.5 bg-current rounded-full" />
+                <div className="w-1.5 h-1.5 bg-current rounded-full" />
+              </div>
+            </div>
+          </DistributionButton>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function AlignmentButton({
+  onClick,
+  disabled,
+  children,
+  title
+}: {
+  onClick: () => void
+  disabled: boolean
+  children: React.ReactNode
+  title: string
+}) {
+  return (
+    <button
+      className={clsx(
+        'flex items-center justify-center',
+        'w-8 h-8',
+        'transition-all duration-150',
+        'rounded-md border',
+        disabled
+          ? 'opacity-30 cursor-not-allowed'
+          : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900 cursor-pointer border-gray-200'
+      )}
+      onClick={onClick}
+      disabled={disabled}
+      title={title}
+    >
+      {children}
+    </button>
+  )
+}
+
+function DistributionButton({
+  onClick,
+  disabled,
+  children,
+  title
+}: {
+  onClick: () => void
+  disabled: boolean
+  children: React.ReactNode
+  title: string
+}) {
+  return (
+    <button
+      className={clsx(
+        'flex items-center justify-center',
+        'flex-1 h-8',
+        'transition-all duration-150',
+        'rounded-md border text-[10px]',
+        disabled
+          ? 'opacity-30 cursor-not-allowed'
+          : 'text-gray-500 hover:bg-gray-100 hover:text-gray-900 cursor-pointer border-gray-200'
+      )}
+      onClick={onClick}
+      disabled={disabled}
+      title={title}
+    >
+      {children}
+    </button>
   )
 }
 
