@@ -20,23 +20,26 @@ const DRAWING_TOOLS: { type: ToolType; icon: React.ComponentType<{ className?: s
 ]
 
 export function TopToolbar() {
-  const { 
-    currentTool, 
-    setTool, 
+  const {
+    currentTool,
+    setTool,
     selection,
     deleteShapes,
-    shapes,
     viewport,
-    setViewport
+    setViewport,
+    undo,
+    redo,
+    past,
+    future,
   } = useDiagramStore()
 
   const handleUndo = useCallback(() => {
-    console.log('Undo')
-  }, [])
+    undo()
+  }, [undo])
 
   const handleRedo = useCallback(() => {
-    console.log('Redo')
-  }, [])
+    redo()
+  }, [redo])
 
   const handleDelete = useCallback(() => {
     if (selection.shapeIds.length > 0) {
@@ -56,8 +59,6 @@ export function TopToolbar() {
     setViewport({ zoom: 1, x: 0, y: 0 })
   }, [setViewport])
 
-  const shapeCount = shapes.length
-
   return (
     <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50">
       <div 
@@ -74,17 +75,17 @@ export function TopToolbar() {
         }}
       >
         <ToolbarGroup>
-          <IconButton 
-            icon={Undo2} 
-            label="Undo" 
+          <IconButton
+            icon={Undo2}
+            label="Undo"
             onClick={handleUndo}
-            disabled={shapeCount === 0}
+            disabled={past.length === 0}
           />
-          <IconButton 
-            icon={Redo2} 
-            label="Redo" 
+          <IconButton
+            icon={Redo2}
+            label="Redo"
             onClick={handleRedo}
-            disabled={shapeCount === 0}
+            disabled={future.length === 0}
           />
         </ToolbarGroup>
 

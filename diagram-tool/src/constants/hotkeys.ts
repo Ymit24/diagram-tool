@@ -41,5 +41,8 @@ export const ALL_HOTKEYS = [
   { key: 'Escape', action: 'deselect', description: 'Deselect all shapes' },
   { key: 'Space + Drag', action: 'pan-drag', description: 'Pan with space held' },
   { key: 'Ctrl/Cmd + Wheel', action: 'zoom', description: 'Zoom in/out' },
+  { key: 'Ctrl/Cmd + Z', action: 'undo', description: 'Undo' },
+  { key: 'Ctrl/Cmd + Shift + Z', action: 'redo', description: 'Redo' },
+  { key: 'Ctrl/Cmd + Y', action: 'redo', description: 'Redo' },
   { key: '?', action: 'help', description: 'Show keyboard shortcuts' },
 ]

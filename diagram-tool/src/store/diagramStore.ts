@@ -7,6 +7,9 @@ import type {
   DrawingState,
   ShapeStyle
 } from '../types/diagram'
+import type { HistoryActionType, HistoryEntry } from '../types/history'
+
+const MAX_HISTORY = 50
 
 interface DiagramState {
   shapes: DiagramShape[]
@@ -18,6 +21,8 @@ interface DiagramState {
   resizingShapeId: string | null
   resizeHandle: string | null
   resizeStartShape: DiagramShape | null
+  past: HistoryEntry[]
+  future: HistoryEntry[]
 
   setTool: (tool: ToolType) => void
   setViewport: (viewport: Partial<Viewport>) => void
@@ -34,7 +39,18 @@ interface DiagramState {
   startResize: (shapeId: string, handle: string) => void
   updateResize: (currentX: number, currentY: number) => void
   endResize: () => void
+  undo: () => void
+  redo: () => void
+  clearFuture: () => void
 }
+
+const recordHistory = (state: DiagramState, type: HistoryActionType, description: string): HistoryEntry => ({
+  type,
+  shapes: [...state.shapes],
+  selection: { ...state.selection },
+  timestamp: Date.now(),
+  description,
+})
 
 export const useDiagramStore = create<DiagramState>((set) => ({
   shapes: [],
@@ -52,6 +68,8 @@ export const useDiagramStore = create<DiagramState>((set) => ({
   resizingShapeId: null,
   resizeHandle: null,
   resizeStartShape: null,
+  past: [],
+  future: [],
 
   setTool: (tool) => set({ currentTool: tool }),
 
@@ -59,34 +77,69 @@ export const useDiagramStore = create<DiagramState>((set) => ({
     viewport: { ...state.viewport, ...viewport }
   })),
 
-  addShape: (shape) => set((state) => ({
-    shapes: [...state.shapes, shape] as DiagramShape[]
-  })),
+  addShape: (shape) => set((state) => {
+    const entry = recordHistory(state, 'add', 'Add shape')
+    const newPast = [...state.past, entry].slice(-MAX_HISTORY)
+    return {
+      shapes: [...state.shapes, shape] as DiagramShape[],
+      past: newPast,
+      future: [],
+    }
+  }),
 
-  updateShape: (id, updates) => set((state) => ({
-    shapes: state.shapes.map((s) => s.id === id ? { ...s, ...updates } : s) as DiagramShape[]
-  })),
+  updateShape: (id, updates) => set((state) => {
+    const entry = recordHistory(state, 'update', 'Update shape')
+    const newPast = [...state.past, entry].slice(-MAX_HISTORY)
+    return {
+      shapes: state.shapes.map((s) => s.id === id ? { ...s, ...updates } : s) as DiagramShape[],
+      past: newPast,
+      future: [],
+    }
+  }),
 
-  deleteShapes: (ids) => set((state) => ({
-    shapes: state.shapes.filter((s) => !ids.includes(s.id)) as DiagramShape[],
-    selection: { shapeIds: [], selectionType: 'none' }
-  })),
+  deleteShapes: (ids) => set((state) => {
+    if (ids.length === 0) return state
+    const entry = recordHistory(state, 'delete', 'Delete shapes')
+    const newPast = [...state.past, entry].slice(-MAX_HISTORY)
+    return {
+      shapes: state.shapes.filter((s) => !ids.includes(s.id)) as DiagramShape[],
+      selection: { shapeIds: [], selectionType: 'none' },
+      past: newPast,
+      future: [],
+    }
+  }),
 
-  setSelection: (selection) => set((state) => ({
-    selection: { ...state.selection, ...selection }
-  })),
+  setSelection: (selection) => set((state) => {
+    if (state.selection.shapeIds.length === 0 && selection.shapeIds?.length === 0) {
+      return state
+    }
+    const entry = recordHistory(state, 'select', 'Select shapes')
+    const newPast = [...state.past, entry].slice(-MAX_HISTORY)
+    return {
+      selection: { ...state.selection, ...selection },
+      past: newPast,
+      future: [],
+    }
+  }),
 
   updateToolOptions: (options) => set((state) => ({
     currentToolOptions: { ...state.currentToolOptions, ...options }
   })),
 
-  updateSelectedShapes: (updates) => set((state) => ({
-    shapes: state.shapes.map((s) => 
-      state.selection.shapeIds.includes(s.id)
-        ? { ...s, style: { ...s.style, ...updates } }
-        : s
-    ) as DiagramShape[]
-  })),
+  updateSelectedShapes: (updates) => set((state) => {
+    if (state.selection.shapeIds.length === 0) return state
+    const entry = recordHistory(state, 'update', 'Update shapes')
+    const newPast = [...state.past, entry].slice(-MAX_HISTORY)
+    return {
+      shapes: state.shapes.map((s) =>
+        state.selection.shapeIds.includes(s.id)
+          ? { ...s, style: { ...s.style, ...updates } }
+          : s
+      ) as DiagramShape[],
+      past: newPast,
+      future: [],
+    }
+  }),
 
   startDrawing: (tool, x, y) => set({
     drawing: { isDrawing: true, tool, startX: x, startY: y, currentX: x, currentY: y, tempShapeId: null }
@@ -186,9 +239,40 @@ export const useDiagramStore = create<DiagramState>((set) => ({
     }
   }),
 
-  endResize: () => set({
-    resizingShapeId: null,
-    resizeHandle: null,
-    resizeStartShape: null,
+  endResize: () => set((state) => {
+    if (!state.resizingShapeId) return state
+    const entry = recordHistory(state, 'update', 'Resize shape')
+    const newPast = [...state.past, entry].slice(-MAX_HISTORY)
+    return {
+      resizingShapeId: null,
+      resizeHandle: null,
+      resizeStartShape: null,
+      past: newPast,
+      future: [],
+    }
   }),
+
+  undo: () => set((state) => {
+    if (state.past.length === 0) return state
+    const entry = state.past[state.past.length - 1]
+    return {
+      shapes: entry.shapes,
+      selection: entry.selection,
+      past: state.past.slice(0, -1),
+      future: [entry, ...state.future],
+    }
+  }),
+
+  redo: () => set((state) => {
+    if (state.future.length === 0) return state
+    const entry = state.future[0]
+    return {
+      shapes: entry.shapes,
+      selection: entry.selection,
+      past: [...state.past, entry],
+      future: state.future.slice(1),
+    }
+  }),
+
+  clearFuture: () => set({ future: [] }),
 }))

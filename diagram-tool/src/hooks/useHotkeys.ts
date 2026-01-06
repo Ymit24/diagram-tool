@@ -3,11 +3,24 @@ import { useDiagramStore } from '../store/diagramStore'
 import { HOTKEYS } from '../constants/hotkeys'
 
 export function useHotkeys() {
-  const { setTool, deleteShapes, setSelection, selection } = useDiagramStore()
+  const { setTool, deleteShapes, setSelection, selection, undo, redo } = useDiagramStore()
 
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
     if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
       return
+    }
+
+    if (e.ctrlKey || e.metaKey) {
+      if (e.key === 'z' && !e.shiftKey) {
+        e.preventDefault()
+        undo()
+        return
+      }
+      if ((e.key === 'z' && e.shiftKey) || e.key === 'y') {
+        e.preventDefault()
+        redo()
+        return
+      }
     }
 
     const key = e.key.toLowerCase()
@@ -38,7 +51,7 @@ export function useHotkeys() {
         setSelection({ shapeIds: [], selectionType: 'none' })
         break
     }
-  }, [setTool, deleteShapes, setSelection, selection.shapeIds])
+  }, [setTool, deleteShapes, setSelection, selection.shapeIds, undo, redo])
 
   useEffect(() => {
     window.addEventListener('keydown', handleKeyDown)
