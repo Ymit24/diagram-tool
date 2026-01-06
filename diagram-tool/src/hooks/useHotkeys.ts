@@ -3,7 +3,7 @@ import { useDiagramStore } from '../store/diagramStore'
 import { HOTKEYS } from '../constants/hotkeys'
 
 export function useHotkeys() {
-  const { setTool, deleteShapes, setSelection } = useDiagramStore()
+  const { setTool, deleteShapes, setSelection, selection } = useDiagramStore()
 
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
     if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
@@ -31,13 +31,13 @@ export function useHotkeys() {
         setTool(action)
         break
       case 'delete':
-        deleteShapes([])
+        deleteShapes(selection.shapeIds)
         break
       case 'deselect':
         setSelection({ shapeIds: [], selectionType: 'none' })
         break
     }
-  }, [setTool, deleteShapes, setSelection])
+  }, [setTool, deleteShapes, setSelection, selection.shapeIds])
 
   useEffect(() => {
     window.addEventListener('keydown', handleKeyDown)
