@@ -3,7 +3,7 @@ import { useDiagramStore } from '../store/diagramStore'
 import { HOTKEYS } from '../constants/hotkeys'
 
 export function useHotkeys() {
-  const { setTool, deleteShapes, setSelection, selection, undo, redo } = useDiagramStore()
+  const { setTool, deleteShapes, setSelection, selection, undo, redo, alignShapes, distributeShapes } = useDiagramStore()
 
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
     if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
@@ -20,6 +20,48 @@ export function useHotkeys() {
         e.preventDefault()
         redo()
         return
+      }
+    }
+
+    if (e.ctrlKey && e.altKey && !e.shiftKey) {
+      switch (e.key.toLowerCase()) {
+        case 'l':
+          e.preventDefault()
+          alignShapes('left')
+          return
+        case 'c':
+          e.preventDefault()
+          alignShapes('center')
+          return
+        case 'r':
+          e.preventDefault()
+          alignShapes('right')
+          return
+        case 't':
+          e.preventDefault()
+          alignShapes('top')
+          return
+        case 'm':
+          e.preventDefault()
+          alignShapes('middle')
+          return
+        case 'b':
+          e.preventDefault()
+          alignShapes('bottom')
+          return
+      }
+    }
+
+    if (e.ctrlKey && e.altKey && e.shiftKey) {
+      switch (e.key.toLowerCase()) {
+        case 'h':
+          e.preventDefault()
+          distributeShapes('horizontal')
+          return
+        case 'v':
+          e.preventDefault()
+          distributeShapes('vertical')
+          return
       }
     }
 
@@ -51,7 +93,7 @@ export function useHotkeys() {
         setSelection({ shapeIds: [], selectionType: 'none' })
         break
     }
-  }, [setTool, deleteShapes, setSelection, selection.shapeIds, undo, redo])
+  }, [setTool, deleteShapes, setSelection, selection.shapeIds, undo, redo, alignShapes, distributeShapes])
 
   useEffect(() => {
     window.addEventListener('keydown', handleKeyDown)

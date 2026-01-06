@@ -4,6 +4,7 @@ import { clsx } from 'clsx'
 import { useDiagramStore } from '../../store/diagramStore'
 import type { ToolType } from '../../types/diagram'
 import { LAYOUT } from '../../constants/layout'
+import { AlignmentToolbar } from './AlignmentToolbar'
 
 const SELECTION_TOOLS: { type: ToolType; icon: React.ComponentType<{ className?: string }>; label: string; shortcut: string }[] = [
   { type: 'select-click', icon: MousePointer2, label: 'Select', shortcut: 'V' },
@@ -119,7 +120,7 @@ export function TopToolbar() {
           ))}
         </ToolbarGroup>
 
-        <ToolbarDivider />
+        <AlignmentToolbar />
 
         <ToolbarGroup>
           <IconButton 

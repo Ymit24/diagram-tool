@@ -8,6 +8,7 @@ import type {
   ShapeStyle
 } from '../types/diagram'
 import type { HistoryActionType, HistoryEntry } from '../types/history'
+import { alignShapes, distributeShapes, type AlignmentType, type DistributionType } from '../utils/alignment'
 
 const MAX_HISTORY = 50
 
@@ -42,6 +43,8 @@ interface DiagramState {
   undo: () => void
   redo: () => void
   clearFuture: () => void
+  alignShapes: (alignment: AlignmentType) => void
+  distributeShapes: (distribution: DistributionType) => void
 }
 
 const recordHistory = (state: DiagramState, type: HistoryActionType, description: string): HistoryEntry => ({
@@ -275,4 +278,40 @@ export const useDiagramStore = create<DiagramState>((set) => ({
   }),
 
   clearFuture: () => set({ future: [] }),
+
+  alignShapes: (alignment) => set((state) => {
+    if (state.selection.shapeIds.length < 2) return state
+
+    const selectedShapes = state.shapes.filter(s => state.selection.shapeIds.includes(s.id))
+    const updates = alignShapes(selectedShapes, alignment)
+
+    const entry = recordHistory(state, 'update', `Align ${alignment}`)
+    return {
+      shapes: state.shapes.map(s => {
+        const update = updates.get(s.id)
+        return update ? { ...s, ...update } : s
+      }) as DiagramShape[],
+      past: [...state.past, entry].slice(-MAX_HISTORY),
+      future: [],
+    }
+  }),
+
+  distributeShapes: (distribution) => set((state) => {
+    if (state.selection.shapeIds.length < 3) return state
+
+    const selectedShapes = state.shapes.filter(s => state.selection.shapeIds.includes(s.id))
+    const updates = distributeShapes(selectedShapes, distribution)
+
+    if (updates.size === 0) return state
+
+    const entry = recordHistory(state, 'update', `Distribute ${distribution}`)
+    return {
+      shapes: state.shapes.map(s => {
+        const update = updates.get(s.id)
+        return update ? { ...s, ...update } : s
+      }) as DiagramShape[],
+      past: [...state.past, entry].slice(-MAX_HISTORY),
+      future: [],
+    }
+  }),
 }))

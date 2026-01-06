@@ -44,5 +44,13 @@ export const ALL_HOTKEYS = [
   { key: 'Ctrl/Cmd + Z', action: 'undo', description: 'Undo' },
   { key: 'Ctrl/Cmd + Shift + Z', action: 'redo', description: 'Redo' },
   { key: 'Ctrl/Cmd + Y', action: 'redo', description: 'Redo' },
+  { key: 'Ctrl+Alt+L', action: 'align-left', description: 'Align left' },
+  { key: 'Ctrl+Alt+C', action: 'align-center', description: 'Align center' },
+  { key: 'Ctrl+Alt+R', action: 'align-right', description: 'Align right' },
+  { key: 'Ctrl+Alt+T', action: 'align-top', description: 'Align top' },
+  { key: 'Ctrl+Alt+M', action: 'align-middle', description: 'Align middle' },
+  { key: 'Ctrl+Alt+B', action: 'align-bottom', description: 'Align bottom' },
+  { key: 'Ctrl+Alt+Shift+H', action: 'distribute-horizontal', description: 'Distribute horizontally' },
+  { key: 'Ctrl+Alt+Shift+V', action: 'distribute-vertical', description: 'Distribute vertically' },
   { key: '?', action: 'help', description: 'Show keyboard shortcuts' },
 ]
