@@ -4,6 +4,7 @@ export const TOOL_INFO: Record<ToolType, { name: string; icon: string; hotkey: s
   'select-click': { name: 'Select (Click)', icon: 'cursor', hotkey: 'V' },
   'select-box': { name: 'Select (Box)', icon: 'selection', hotkey: 'B' },
   'select-lasso': { name: 'Select (Lasso)', icon: 'lasso', hotkey: 'L' },
+  'pan': { name: 'Pan', icon: 'hand', hotkey: 'P' },
   'rectangle': { name: 'Rectangle', icon: 'square', hotkey: 'R' },
   'circle': { name: 'Circle', icon: 'circle', hotkey: 'C' },
   'line': { name: 'Line', icon: 'line', hotkey: 'O' },

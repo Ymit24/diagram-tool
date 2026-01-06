@@ -15,7 +15,7 @@ export function useHotkeys() {
 
     if (!action) return
 
-    const toolKeys = ['v', 'b', 'l', 'r', 'c', 'o', 'a']
+    const toolKeys = ['v', 'b', 'l', 'p', 'r', 'c', 'o', 'a']
     if (toolKeys.includes(key) || key === 'delete' || key === 'backspace' || key === 'escape') {
       e.preventDefault()
     }
@@ -24,6 +24,7 @@ export function useHotkeys() {
       case 'select-click':
       case 'select-box':
       case 'select-lasso':
+      case 'pan':
       case 'rectangle':
       case 'circle':
       case 'line':

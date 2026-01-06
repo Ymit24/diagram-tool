@@ -6,6 +6,7 @@ export type ToolType =
   | 'select-click'
   | 'select-box'
   | 'select-lasso'
+  | 'pan'
   | 'rectangle'
   | 'circle'
   | 'line'

@@ -7,18 +7,47 @@ import { createRectangle, createCircle, createLine, createArrow } from '../../ut
 import { hitTestPoint, hitTestBox, hitTestLasso } from '../../utils/hitTest'
 import { SelectedShapeRenderer } from '../shapes'
 import { ZoomControls } from './ZoomControls'
-import { CANVAS_GRID } from '../../constants/layout'
 
 interface Point { x: number; y: number }
+
+const GRID_SIZE = 100
+
+function InfiniteGrid({ viewport }: { viewport: { x: number; y: number; zoom: number } }) {
+  const gridSize = GRID_SIZE
+
+  const buffer = gridSize * 2
+  const left = Math.floor((-viewport.x - buffer) / gridSize / viewport.zoom) * gridSize
+  const right = Math.ceil((-viewport.x + window.innerWidth / viewport.zoom + buffer) / gridSize) * gridSize
+  const top = Math.floor((-viewport.y - buffer) / gridSize / viewport.zoom) * gridSize
+  const bottom = Math.ceil((-viewport.y + window.innerHeight / viewport.zoom + buffer) / gridSize) * gridSize
+
+  const verticalLines = []
+  for (let x = left; x <= right; x += gridSize) {
+    verticalLines.push(<line key={`v${x}`} x1={x} y1={top} x2={x} y2={bottom} stroke="#E5E7EB" strokeWidth={1 / viewport.zoom} />)
+  }
+
+  const horizontalLines = []
+  for (let y = top; y <= bottom; y += gridSize) {
+    horizontalLines.push(<line key={`h${y}`} x1={left} y1={y} x2={right} y2={y} stroke="#E5E7EB" strokeWidth={1 / viewport.zoom} />)
+  }
+
+  return (
+    <g>
+      {verticalLines}
+      {horizontalLines}
+    </g>
+  )
+}
 
 export function Canvas() {
   const canvasRef = useRef<SVGSVGElement>(null)
   const lassoPointsRef = useRef<Point[]>([])
   const [lassoPointsForRender, setLassoPointsForRender] = useState<Point[]>([])
   const [dragStartPos, setDragStartPos] = useState<Point | null>(null)
-  const [isPanning, setIsPanning] = useState(false)
+  const isPanningRef = useRef(false)
   const panStartRef = useRef<Point | null>(null)
   const panStartViewportRef = useRef({ x: 0, y: 0 })
+  const [, forceUpdate] = useState({})
 
   const {
     shapes,
@@ -41,17 +70,19 @@ export function Canvas() {
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.code === 'Space' && !isPanning) {
+      if (e.code === 'Space' && !isPanningRef.current) {
         e.preventDefault()
-        setIsPanning(true)
+        isPanningRef.current = true
+        forceUpdate({})
       }
     }
 
     const handleKeyUp = (e: KeyboardEvent) => {
       if (e.code === 'Space') {
         e.preventDefault()
-        setIsPanning(false)
+        isPanningRef.current = false
         panStartRef.current = null
+        forceUpdate({})
       }
     }
 
@@ -62,7 +93,7 @@ export function Canvas() {
       window.removeEventListener('keydown', handleKeyDown)
       window.removeEventListener('keyup', handleKeyUp)
     }
-  }, [isPanning])
+  }, [])
 
   const handleWheel = useCallback((e: React.WheelEvent) => {
     if (e.ctrlKey || e.metaKey) {
@@ -79,7 +110,7 @@ export function Canvas() {
   }, [viewport, setViewport])
 
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
-    if (isPanning) {
+    if (isPanningRef.current || currentTool === 'pan') {
       panStartRef.current = { x: e.clientX, y: e.clientY }
       panStartViewportRef.current = { x: viewport.x, y: viewport.y }
       return
@@ -119,10 +150,10 @@ export function Canvas() {
     }
 
     startDrawing(currentTool, x, y)
-  }, [isPanning, currentTool, viewport, shapes, selection.shapeIds, startDrawing, setSelection])
+  }, [currentTool, viewport, shapes, selection.shapeIds, startDrawing, setSelection])
 
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
-    if (isPanning && panStartRef.current) {
+    if ((isPanningRef.current || currentTool === 'pan') && panStartRef.current) {
       const dx = e.clientX - panStartRef.current.x
       const dy = e.clientY - panStartRef.current.y
       setViewport({
@@ -161,7 +192,7 @@ export function Canvas() {
         setLassoPointsForRender([...lassoPointsRef.current])
       }
     }
-  }, [isPanning, dragStartPos, currentTool, drawing.isDrawing, viewport, shapes, selection.shapeIds, updateDrawing, setViewport])
+  }, [currentTool, drawing.isDrawing, viewport, shapes, selection.shapeIds, updateDrawing, setViewport])
 
   const handleMouseMoveWithResize = useCallback((e: React.MouseEvent) => {
     if (!canvasRef.current) return
@@ -183,7 +214,7 @@ export function Canvas() {
   }, [handleMouseMove, updateResize, viewport])
 
   const handleMouseUp = useCallback((e: React.MouseEvent) => {
-    if (isPanning) {
+    if (isPanningRef.current || currentTool === 'pan') {
       panStartRef.current = null
       return
     }
@@ -259,7 +290,7 @@ export function Canvas() {
     finishDrawing()
     lassoPointsRef.current = []
     setLassoPointsForRender([])
-  }, [drawing, viewport, shapes, currentToolOptions, addShape, finishDrawing, setSelection])
+  }, [currentTool, drawing, viewport, shapes, currentToolOptions, addShape, finishDrawing, setSelection])
 
   const handleMouseUpWithResize = useCallback((e: React.MouseEvent) => {
     const {
@@ -304,6 +335,8 @@ export function Canvas() {
     height: Math.abs(lassoPointsForRender[lassoPointsForRender.length - 1].y - lassoPointsForRender[0].y),
   } : null
 
+  const isPanning = isPanningRef.current || currentTool === 'pan'
+
   return (
     <div className="w-full h-full overflow-hidden bg-gray-50 relative">
       <ZoomControls />
@@ -321,70 +354,61 @@ export function Canvas() {
         onMouseLeave={handleMouseUpWithResize}
         onWheel={handleWheel}
       >
-        <defs>
-          <pattern id="grid" width={CANVAS_GRID.smallGridSize} height={CANVAS_GRID.smallGridSize} patternUnits="userSpaceOnUse">
-            <circle cx={CANVAS_GRID.smallDotSize} cy={CANVAS_GRID.smallDotSize} r={CANVAS_GRID.smallDotSize} fill={CANVAS_GRID.dotColor} />
-          </pattern>
-          <pattern id="grid-large" width={CANVAS_GRID.largeGridSize} height={CANVAS_GRID.largeGridSize} patternUnits="userSpaceOnUse">
-            <rect width={CANVAS_GRID.largeGridSize} height={CANVAS_GRID.largeGridSize} fill="url(#grid)" />
-            <line x1={CANVAS_GRID.largeGridSize} y1="0" x2={CANVAS_GRID.largeGridSize} y2={CANVAS_GRID.largeGridSize} stroke={CANVAS_GRID.lineColor} strokeWidth="1" />
-            <line x1="0" y1={CANVAS_GRID.largeGridSize} x2={CANVAS_GRID.largeGridSize} y2={CANVAS_GRID.largeGridSize} stroke={CANVAS_GRID.lineColor} strokeWidth="1" />
-          </pattern>
-        </defs>
+        <g transform={`translate(${viewport.x}, ${viewport.y}) scale(${viewport.zoom})`}>
+          <InfiniteGrid viewport={viewport} />
 
-        <rect width="100%" height="100%" fill="url(#grid-large)" />
+          {shapes.map((shape) => (
+            <SelectedShapeRenderer
+              key={shape.id}
+              shape={shape}
+              selected={selection.shapeIds.includes(shape.id)}
+              onClick={(e) => handleShapeClick(e, shape.id)}
+              onResizeStart={handleResizeMouseDown}
+            />
+          ))}
 
-        {shapes.map((shape) => (
-          <SelectedShapeRenderer
-            key={shape.id}
-            shape={shape}
-            selected={selection.shapeIds.includes(shape.id)}
-            onClick={(e) => handleShapeClick(e, shape.id)}
-            onResizeStart={handleResizeMouseDown}
-          />
-        ))}
+          {drawing.isDrawing && drawing.tool !== 'select-click' && drawing.tool !== 'select-box' && drawing.tool !== 'select-lasso' && (() => {
+            const isLineOrArrow = drawing.tool === 'line' || drawing.tool === 'arrow'
+            const deltaX = drawing.currentX - drawing.startX
+            const deltaY = drawing.currentY - drawing.startY
+            const tempShape = {
+              id: 'temp',
+              type: drawing.tool as 'rectangle' | 'circle' | 'line' | 'arrow',
+              x: isLineOrArrow ? drawing.startX : Math.min(drawing.startX, drawing.currentX),
+              y: isLineOrArrow ? drawing.startY : Math.min(drawing.startY, drawing.currentY),
+              width: Math.abs(deltaX),
+              height: Math.abs(deltaY),
+              x2: isLineOrArrow ? deltaX : 0,
+              y2: isLineOrArrow ? deltaY : 0,
+              rotation: 0,
+              style: currentToolOptions,
+            } as DiagramShape
+            return <SelectedShapeRenderer shape={tempShape} />
+          })()}
 
-        {drawing.isDrawing && drawing.tool !== 'select-click' && drawing.tool !== 'select-box' && drawing.tool !== 'select-lasso' && (() => {
-          const isLineOrArrow = drawing.tool === 'line' || drawing.tool === 'arrow'
-          const deltaX = drawing.currentX - drawing.startX
-          const deltaY = drawing.currentY - drawing.startY
-          const tempShape = {
-            id: 'temp',
-            type: drawing.tool as 'rectangle' | 'circle' | 'line' | 'arrow',
-            x: isLineOrArrow ? drawing.startX : Math.min(drawing.startX, drawing.currentX),
-            y: isLineOrArrow ? drawing.startY : Math.min(drawing.startY, drawing.currentY),
-            width: Math.abs(deltaX),
-            height: Math.abs(deltaY),
-            x2: isLineOrArrow ? deltaX : 0,
-            y2: isLineOrArrow ? deltaY : 0,
-            rotation: 0,
-            style: currentToolOptions,
-          } as DiagramShape
-          return <SelectedShapeRenderer shape={tempShape} />
-        })()}
+          {drawing.isDrawing && drawing.tool === 'select-box' && selectionBox && (
+            <rect
+              x={selectionBox.x}
+              y={selectionBox.y}
+              width={selectionBox.width}
+              height={selectionBox.height}
+              fill="rgba(59, 130, 246, 0.1)"
+              stroke="#3B82F6"
+              strokeWidth={1 / viewport.zoom}
+              strokeDasharray="4 2"
+            />
+          )}
 
-        {drawing.isDrawing && drawing.tool === 'select-box' && selectionBox && (
-          <rect
-            x={selectionBox.x}
-            y={selectionBox.y}
-            width={selectionBox.width}
-            height={selectionBox.height}
-            fill="rgba(59, 130, 246, 0.1)"
-            stroke="#3B82F6"
-            strokeWidth={1}
-            strokeDasharray="4 2"
-          />
-        )}
-
-        {drawing.isDrawing && drawing.tool === 'select-lasso' && lassoPointsForRender.length > 0 && (
-          <path
-            d={buildLassoPath(lassoPointsForRender) + ' Z'}
-            fill="rgba(59, 130, 246, 0.1)"
-            stroke="#3B82F6"
-            strokeWidth={1}
-            strokeDasharray="4 2"
-          />
-        )}
+          {drawing.isDrawing && drawing.tool === 'select-lasso' && lassoPointsForRender.length > 0 && (
+            <path
+              d={buildLassoPath(lassoPointsForRender) + ' Z'}
+              fill="rgba(59, 130, 246, 0.1)"
+              stroke="#3B82F6"
+              strokeWidth={1 / viewport.zoom}
+              strokeDasharray="4 2"
+            />
+          )}
+        </g>
       </svg>
     </div>
   )

@@ -1,5 +1,5 @@
 import { useCallback } from 'react'
-import { MousePointer2, Square, Circle, Minus, ArrowRight, Undo2, Redo2, Copy, Trash2, Section, LassoSelect } from 'lucide-react'
+import { MousePointer2, Square, Circle, Minus, ArrowRight, Undo2, Redo2, Copy, Trash2, Section, LassoSelect, Hand } from 'lucide-react'
 import { clsx } from 'clsx'
 import { useDiagramStore } from '../../store/diagramStore'
 import type { ToolType } from '../../types/diagram'
@@ -9,6 +9,7 @@ const SELECTION_TOOLS: { type: ToolType; icon: React.ComponentType<{ className?:
   { type: 'select-click', icon: MousePointer2, label: 'Select', shortcut: 'V' },
   { type: 'select-box', icon: Section, label: 'Box Select', shortcut: 'B' },
   { type: 'select-lasso', icon: LassoSelect, label: 'Lasso Select', shortcut: 'L' },
+  { type: 'pan', icon: Hand, label: 'Pan', shortcut: 'P' },
 ]
 
 const DRAWING_TOOLS: { type: ToolType; icon: React.ComponentType<{ className?: string }>; label: string; shortcut: string }[] = [
@@ -52,7 +53,7 @@ export function TopToolbar() {
   }, [viewport.zoom, setViewport])
 
   const handleZoomReset = useCallback(() => {
-    setViewport({ zoom: 1 })
+    setViewport({ zoom: 1, x: 0, y: 0 })
   }, [setViewport])
 
   const shapeCount = shapes.length
