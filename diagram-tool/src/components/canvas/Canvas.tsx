@@ -178,7 +178,7 @@ export function Canvas() {
       const thresholdDx = x - initialDragStartPos.x
       const thresholdDy = y - initialDragStartPos.y
 
-      if (Math.abs(thresholdDx) > 3 || Math.abs(thresholdDy) > 3) {
+      if (Math.abs(thresholdDx) > 1 || Math.abs(thresholdDy) > 1) {
         if (!isDragging) {
           setIsDragging(true)
         }
@@ -199,7 +199,7 @@ export function Canvas() {
       return
     }
 
-    if (!isPanningRef.current && currentTool === 'select-click' && !dragStartPos) {
+    if (!isPanningRef.current && currentTool === 'select-click') {
       const hoveredShape = shapes.find(s => hitTestPoint(s, x, y))
       setHoveredShapeId(hoveredShape?.id || null)
     }
@@ -363,6 +363,9 @@ export function Canvas() {
     }
 
     if (['select-click', 'select-box', 'select-lasso'].includes(currentTool)) {
+      if (currentTool === 'select-click' && isDragging && selection.shapeIds.length > 0) {
+        return 'cursor-move'
+      }
       if (currentTool === 'select-click' && hoveredShapeId && selection.shapeIds.includes(hoveredShapeId)) {
         return 'cursor-move'
       }
