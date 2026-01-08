@@ -102,7 +102,7 @@ export function Canvas() {
       if (rect) {
         const mouseX = e.clientX - rect.left
         const mouseY = e.clientY - rect.top
-        const newZoom = Math.min(Math.max(viewport.zoom * e.scale, 0.1), 5)
+        const newZoom = Math.min(Math.max(viewport.zoom * e.scale, 0.25), 4)
         const zoomRatio = newZoom / viewport.zoom
         setViewport({
           zoom: newZoom,
@@ -132,7 +132,7 @@ export function Canvas() {
     if (e.ctrlKey || e.metaKey || isTrackpadPinch) {
       e.preventDefault()
       const zoomFactor = e.deltaY > 0 ? 0.9 : 1.1
-      const newZoom = Math.min(Math.max(viewport.zoom * zoomFactor, 0.1), 5)
+      const newZoom = Math.min(Math.max(viewport.zoom * zoomFactor, 0.25), 4)
 
       const rect = canvasRef.current?.getBoundingClientRect()
       if (rect) {

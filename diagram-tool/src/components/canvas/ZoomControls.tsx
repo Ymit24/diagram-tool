@@ -7,11 +7,11 @@ export function ZoomControls() {
   const { viewport, setViewport, shapes } = useDiagramStore()
 
   const handleZoomIn = () => {
-    setViewport({ zoom: Math.min(viewport.zoom * 1.2, 5) })
+    setViewport({ zoom: Math.min(viewport.zoom * 1.2, 4) })
   }
 
   const handleZoomOut = () => {
-    setViewport({ zoom: Math.max(viewport.zoom / 1.2, 0.1) })
+    setViewport({ zoom: Math.max(viewport.zoom / 1.2, 0.25) })
   }
 
   const handleZoomReset = () => {

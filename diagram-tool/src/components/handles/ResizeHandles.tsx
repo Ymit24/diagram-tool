@@ -3,10 +3,12 @@ interface ResizeHandleProps {
   y: number
   cursor: string
   handle: string
+  inverseScale: number
   onMouseDown: (e: React.MouseEvent, handle: string) => void
 }
 
-function ResizeHandle({ x, y, cursor, handle, onMouseDown }: ResizeHandleProps) {
+function ResizeHandle({ x, y, cursor, handle, inverseScale, onMouseDown }: ResizeHandleProps) {
+  const size = 8 * inverseScale
   return (
     <g
       transform={`translate(${x}, ${y})`}
@@ -14,13 +16,13 @@ function ResizeHandle({ x, y, cursor, handle, onMouseDown }: ResizeHandleProps) 
       onMouseDown={(e) => onMouseDown(e, handle)}
     >
       <rect
-        x={-4}
-        y={-4}
-        width={8}
-        height={8}
+        x={-size / 2}
+        y={-size / 2}
+        width={size}
+        height={size}
         fill="white"
         stroke="#3B82F6"
-        strokeWidth={1}
+        strokeWidth={1 / (1 / inverseScale)}
       />
     </g>
   )
@@ -37,9 +39,11 @@ export interface ResizeHandlesProps {
     y2?: number
   }
   onResizeStart: (e: React.MouseEvent, handle: string) => void
+  viewport: { zoom: number }
 }
 
-export function ResizeHandles({ shape, onResizeStart }: ResizeHandlesProps) {
+export function ResizeHandles({ shape, onResizeStart, viewport }: ResizeHandlesProps) {
+  const inverseScale = 1 / viewport.zoom
   const handles: React.ReactNode[] = []
 
   if (shape.type === 'line' || shape.type === 'arrow') {
@@ -53,6 +57,7 @@ export function ResizeHandles({ shape, onResizeStart }: ResizeHandlesProps) {
         y={bboxY}
         cursor="nwse-resize"
         handle="start"
+        inverseScale={inverseScale}
         onMouseDown={onResizeStart}
       />,
       <ResizeHandle
@@ -61,6 +66,7 @@ export function ResizeHandles({ shape, onResizeStart }: ResizeHandlesProps) {
         y={bboxY + (shape.y2 || shape.height)}
         cursor="nwse-resize"
         handle="end"
+        inverseScale={inverseScale}
         onMouseDown={onResizeStart}
       />
     )
@@ -85,6 +91,7 @@ export function ResizeHandles({ shape, onResizeStart }: ResizeHandlesProps) {
           y={pos.y}
           cursor={pos.cursor}
           handle={pos.handle}
+          inverseScale={inverseScale}
           onMouseDown={onResizeStart}
         />
       )

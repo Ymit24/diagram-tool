@@ -4,6 +4,7 @@ import { Circle } from './Circle'
 import { Line } from './Line'
 import { Arrow } from './Arrow'
 import { ResizeHandles } from '../handles/ResizeHandles'
+import { useDiagramStore } from '../../store/diagramStore'
 
 interface ShapeRendererProps {
   shape: DiagramShape
@@ -31,6 +32,8 @@ export function ShapeRenderer({ shape, selected, onClick }: ShapeRendererProps) 
 }
 
 export function SelectedShapeRenderer({ shape, selected, onClick, onResizeStart }: SelectedShapeRendererProps) {
+  const { viewport } = useDiagramStore()
+  
   return (
     <g>
       <ShapeRenderer shape={shape} selected={selected} onClick={onClick} />
@@ -38,6 +41,7 @@ export function SelectedShapeRenderer({ shape, selected, onClick, onResizeStart 
         <ResizeHandles
           shape={shape}
           onResizeStart={onResizeStart}
+          viewport={viewport}
         />
       )}
     </g>
