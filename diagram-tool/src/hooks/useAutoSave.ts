@@ -53,7 +53,7 @@ export function useAutoSave(): UseAutoSaveReturn {
       }
       debouncedSave.cancel()
     }
-  }, [shapes, selection, debouncedSave])
+  }, [shapes, selection, viewport, currentTool, currentToolOptions, debouncedSave])
 
   return { lastSaved, status }
 }
