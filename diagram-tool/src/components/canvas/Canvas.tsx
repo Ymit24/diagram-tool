@@ -43,13 +43,14 @@ export function Canvas() {
   const canvasRef = useRef<SVGSVGElement>(null)
   const lassoPointsRef = useRef<Point[]>([])
   const [lassoPointsForRender, setLassoPointsForRender] = useState<Point[]>([])
-  const [dragStartPos, setDragStartPos] = useState<Point | null>(null)
-  const [initialDragStartPos, setInitialDragStartPos] = useState<Point | null>(null)
-  const [isDragging, setIsDragging] = useState(false)
   const [hoveredShapeId, setHoveredShapeId] = useState<string | null>(null)
+  const [isDragging, setIsDragging] = useState(false)
   const isPanningRef = useRef(false)
   const panStartRef = useRef<Point | null>(null)
   const panStartViewportRef = useRef({ x: 0, y: 0 })
+  const dragStartRef = useRef<Point | null>(null)
+  const lastMouseRef = useRef<Point | null>(null)
+  const isDraggingRef = useRef(false)
   const [, forceUpdate] = useState({})
 
   const {
@@ -131,12 +132,16 @@ export function Canvas() {
         if (!selection.shapeIds.includes(clickedShape.id)) {
           setSelection({ shapeIds: [clickedShape.id], selectionType: 'single' })
         }
-        const startPos = { x, y }
-        setDragStartPos(startPos)
-        setInitialDragStartPos(startPos)
+        dragStartRef.current = { x, y }
+        lastMouseRef.current = { x, y }
+        isDraggingRef.current = false
         setIsDragging(false)
       } else {
         setSelection({ shapeIds: [], selectionType: 'none' })
+        dragStartRef.current = null
+        lastMouseRef.current = null
+        isDraggingRef.current = false
+        setIsDragging(false)
       }
       return
     }
@@ -174,27 +179,31 @@ export function Canvas() {
     const rect = canvasRef.current.getBoundingClientRect()
     const { x, y } = screenToCanvas(e.clientX, e.clientY, viewport, rect)
 
-    if (dragStartPos && initialDragStartPos && currentTool === 'select-click' && selection.shapeIds.length > 0) {
-      const thresholdDx = x - initialDragStartPos.x
-      const thresholdDy = y - initialDragStartPos.y
+    if (dragStartRef.current && lastMouseRef.current && currentTool === 'select-click' && selection.shapeIds.length > 0) {
+      if (!isDraggingRef.current) {
+        const thresholdDx = x - dragStartRef.current.x
+        const thresholdDy = y - dragStartRef.current.y
 
-      if (Math.abs(thresholdDx) > 1 || Math.abs(thresholdDy) > 1) {
-        if (!isDragging) {
+        if (Math.abs(thresholdDx) > 3 || Math.abs(thresholdDy) > 3) {
+          isDraggingRef.current = true
           setIsDragging(true)
+          lastMouseRef.current = { x, y }
         }
       }
 
-      if (isDragging) {
-        const dx = x - dragStartPos.x
-        const dy = y - dragStartPos.y
+      if (isDraggingRef.current) {
+        const dx = x - lastMouseRef.current.x
+        const dy = y - lastMouseRef.current.y
 
-        selection.shapeIds.forEach(id => {
-          const shape = shapes.find(s => s.id === id)
-          if (shape) {
-            updateShape(id, { x: shape.x + dx, y: shape.y + dy })
-          }
-        })
-        setDragStartPos({ x, y })
+        if (dx !== 0 || dy !== 0) {
+          selection.shapeIds.forEach(id => {
+            const shape = shapes.find(s => s.id === id)
+            if (shape) {
+              updateShape(id, { x: shape.x + dx, y: shape.y + dy })
+            }
+          })
+          lastMouseRef.current = { x, y }
+        }
       }
       return
     }
@@ -241,8 +250,24 @@ export function Canvas() {
 
     if (!canvasRef.current) return
 
-    setDragStartPos(null)
-    setInitialDragStartPos(null)
+    if (isDraggingRef.current) {
+      const state = useDiagramStore.getState()
+      const entry = {
+        type: 'update' as const,
+        shapes: [...state.shapes],
+        selection: { ...state.selection },
+        timestamp: Date.now(),
+        description: 'Move shapes',
+      }
+      useDiagramStore.setState({
+        past: [...state.past, entry].slice(-50),
+        future: [],
+      })
+    }
+
+    dragStartRef.current = null
+    lastMouseRef.current = null
+    isDraggingRef.current = false
     setIsDragging(false)
 
     if (!drawing.isDrawing) return
