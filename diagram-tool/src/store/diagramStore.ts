@@ -7,6 +7,7 @@ import type {
   DrawingState,
   ShapeStyle
 } from '../types/diagram'
+import { PersistedState } from '../utils/storage'
 import { alignShapes, distributeShapes, type AlignmentType, type DistributionType } from '../utils/alignment'
 import { calculateResizeUpdate, applyResizeUpdate, type ResizeHandle } from '../utils/resize'
 import { createHistoryEntry, pushHistory, undo as undoHistory, redo as redoHistory } from '../utils/history'
@@ -26,6 +27,7 @@ interface DiagramState {
 
   setTool: (tool: ToolType) => void
   setViewport: (viewport: Partial<Viewport>) => void
+  loadState: (data: PersistedState) => void
   addShape: (shape: DiagramShape) => void
   updateShape: (id: string, updates: Partial<DiagramShape>, skipHistory?: boolean) => void
   deleteShapes: (ids: string[]) => void
@@ -70,6 +72,16 @@ export const useDiagramStore = create<DiagramState>((set) => ({
   setViewport: (viewport) => set((state) => ({
     viewport: { ...state.viewport, ...viewport }
   })),
+
+  loadState: (data) => set({
+    shapes: data.shapes,
+    selection: data.selection,
+    viewport: data.viewport,
+    currentTool: data.currentTool,
+    currentToolOptions: data.currentToolOptions,
+    past: [],
+    future: [],
+  }),
 
   addShape: (shape) => set((state) => {
     const entry = createHistoryEntry(state, 'add', 'Add shape')

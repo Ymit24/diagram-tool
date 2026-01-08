@@ -1,0 +1,4 @@
+[test]
+# Use jsdom for DOM testing with @testing-library/react
+# Bun doesn't have a built-in jsdom option, so we use vitest via npm script
+# Run tests with: bun run test
