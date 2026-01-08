@@ -92,27 +92,25 @@ export function Canvas() {
     }
 
     const handleGestureStart = (e: GestureEvent) => {
-      if (e.ctrlKey) {
-        e.preventDefault()
-      }
+      e.preventDefault()
+      return false
     }
 
     const handleGestureChange = (e: GestureEvent) => {
-      if (e.ctrlKey) {
-        e.preventDefault()
-        const rect = canvasRef.current?.getBoundingClientRect()
-        if (rect) {
-          const mouseX = e.clientX - rect.left
-          const mouseY = e.clientY - rect.top
-          const newZoom = Math.min(Math.max(viewport.zoom * e.scale, 0.1), 5)
-          const zoomRatio = newZoom / viewport.zoom
-          setViewport({
-            zoom: newZoom,
-            x: mouseX - (mouseX - viewport.x) * zoomRatio,
-            y: mouseY - (mouseY - viewport.y) * zoomRatio,
-          })
-        }
+      e.preventDefault()
+      const rect = canvasRef.current?.getBoundingClientRect()
+      if (rect) {
+        const mouseX = e.clientX - rect.left
+        const mouseY = e.clientY - rect.top
+        const newZoom = Math.min(Math.max(viewport.zoom * e.scale, 0.1), 5)
+        const zoomRatio = newZoom / viewport.zoom
+        setViewport({
+          zoom: newZoom,
+          x: mouseX - (mouseX - viewport.x) * zoomRatio,
+          y: mouseY - (mouseY - viewport.y) * zoomRatio,
+        })
       }
+      return false
     }
 
     window.addEventListener('keydown', handleKeyDown)
@@ -129,9 +127,9 @@ export function Canvas() {
   }, [viewport, setViewport])
 
   const handleWheel = useCallback((e: React.WheelEvent) => {
-    const isCtrlZoom = e.ctrlKey || e.metaKey
-
-    if (isCtrlZoom) {
+    const isTrackpadPinch = Math.abs(e.deltaX) < 10 && Math.abs(e.deltaY) > 0 && !e.shiftKey && !e.altKey
+    
+    if (e.ctrlKey || e.metaKey || isTrackpadPinch) {
       e.preventDefault()
       const zoomFactor = e.deltaY > 0 ? 0.9 : 1.1
       const newZoom = Math.min(Math.max(viewport.zoom * zoomFactor, 0.1), 5)
