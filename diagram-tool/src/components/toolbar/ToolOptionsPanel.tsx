@@ -5,7 +5,7 @@ import { LAYOUT } from '../../constants/layout'
 import { getSelectedShapes, getCommonProperties, getShapeTypeLabel } from '../../utils/selection'
 import type { AlignmentType, DistributionType } from '../../utils/alignment'
 import { clsx } from 'clsx'
-import { Palette, CircleDashed, ArrowLeft, Layers, AlignStartVertical, AlignStartHorizontal, AlignCenter, AlignEndVertical, AlignEndHorizontal, AlignCenterVertical, AlignCenterHorizontal } from 'lucide-react'
+import { Palette, CircleDashed, ArrowLeft, Layers } from 'lucide-react'
 import type { ArrowHeadStyle } from '../../types/diagram'
 
 function Stroke({ className }: { className?: string }) {
@@ -175,84 +175,94 @@ function AlignmentSection({
   return (
     <div>
       <div className="flex items-center mb-2.5">
-        <AlignCenterHorizontal className="w-3.5 h-3.5 mr-1.5 text-gray-400" />
+        <svg className="w-3.5 h-3.5 mr-1.5 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <path d="M4 12h16M4 12l4-4M4 12l4 4M8 8v12M12 8v12M16 8v12M20 8v12" />
+        </svg>
         <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Alignment</span>
       </div>
       <div className="space-y-2">
-        <div className="flex gap-1">
-          <AlignmentButton
-            onClick={() => onAlign('left')}
-            disabled={!canAlign}
-            title="Align Left"
-          >
-            <AlignStartHorizontal className="w-4 h-4" />
-          </AlignmentButton>
-          <AlignmentButton
-            onClick={() => onAlign('center')}
-            disabled={!canAlign}
-            title="Align Center"
-          >
-            <AlignCenter className="w-4 h-4" />
-          </AlignmentButton>
-          <AlignmentButton
-            onClick={() => onAlign('right')}
-            disabled={!canAlign}
-            title="Align Right"
-          >
-            <AlignEndHorizontal className="w-4 h-4" />
-          </AlignmentButton>
-        </div>
         <div className="flex gap-1">
           <AlignmentButton
             onClick={() => onAlign('top')}
             disabled={!canAlign}
             title="Align Top"
           >
-            <AlignStartVertical className="w-4 h-4" />
+            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M4 8h16M4 8l4-4M4 8l4 4M8 4v12M12 4v12M16 4v12M20 4v12" />
+            </svg>
           </AlignmentButton>
           <AlignmentButton
             onClick={() => onAlign('middle')}
             disabled={!canAlign}
             title="Align Middle"
           >
-            <AlignCenterVertical className="w-4 h-4" />
+            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M4 12h16M4 12l4-4M4 12l4 4M8 8v12M12 8v12M16 8v12M20 8v12" />
+            </svg>
           </AlignmentButton>
           <AlignmentButton
             onClick={() => onAlign('bottom')}
             disabled={!canAlign}
             title="Align Bottom"
           >
-            <AlignEndVertical className="w-4 h-4" />
+            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M4 16h16M4 16l4 4M4 16l4-4M8 4v12M12 4v12M16 4v12M20 4v12" />
+            </svg>
+          </AlignmentButton>
+        </div>
+        <div className="flex gap-1">
+          <AlignmentButton
+            onClick={() => onAlign('left')}
+            disabled={!canAlign}
+            title="Align Left"
+          >
+            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M8 4h12M8 4l-4 4M8 4l4 4M4 8v12M4 12v12M4 16v12M4 20v12" />
+            </svg>
+          </AlignmentButton>
+          <AlignmentButton
+            onClick={() => onAlign('center')}
+            disabled={!canAlign}
+            title="Align Center"
+          >
+            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M12 4h8M12 4l-4 4M12 4l4 4M8 8h12M8 12h12M8 16h12M4 8v12M20 8v12" />
+            </svg>
+          </AlignmentButton>
+          <AlignmentButton
+            onClick={() => onAlign('right')}
+            disabled={!canAlign}
+            title="Align Right"
+          >
+            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M16 4h-12M16 4l-4 4M16 4l-4-4M20 8v12M20 12v12M20 16v12M20 20v12" />
+            </svg>
           </AlignmentButton>
         </div>
         <div className="flex gap-1 pt-1 border-t border-gray-100">
           <DistributionButton
-            onClick={() => onDistribute('horizontal')}
-            disabled={!canDistribute}
-            title="Distribute Horizontally"
-          >
-            <div className="flex flex-col items-center gap-0.5">
-              <div className="flex items-center gap-0.5">
-                <div className="w-1.5 h-1.5 bg-current rounded-full" />
-                <div className="w-1.5 h-1.5 bg-current rounded-full" />
-                <div className="w-1.5 h-1.5 bg-current rounded-full" />
-              </div>
-              <AlignCenterHorizontal className="w-3 h-3" />
-            </div>
-          </DistributionButton>
-          <DistributionButton
             onClick={() => onDistribute('vertical')}
             disabled={!canDistribute}
-            title="Distribute Vertically"
+            title="Distribute vertically - space shapes evenly top to bottom"
           >
-            <div className="flex flex-col items-center gap-0.5">
-              <AlignCenterVertical className="w-3 h-3" />
-              <div className="flex flex-col items-center gap-0.5">
-                <div className="w-1.5 h-1.5 bg-current rounded-full" />
-                <div className="w-1.5 h-1.5 bg-current rounded-full" />
-                <div className="w-1.5 h-1.5 bg-current rounded-full" />
-              </div>
-            </div>
+            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M12 2v6M12 10v6M12 18v6M8 6h8M8 14h8" />
+              <circle cx="12" cy="4" r="1.5" fill="currentColor" />
+              <circle cx="12" cy="13" r="1.5" fill="currentColor" />
+              <circle cx="12" cy="20" r="1.5" fill="currentColor" />
+            </svg>
+          </DistributionButton>
+          <DistributionButton
+            onClick={() => onDistribute('horizontal')}
+            disabled={!canDistribute}
+            title="Distribute horizontally - space shapes evenly left to right"
+          >
+            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M2 12h6M10 12h6M18 12h6M6 8v8M14 8v8M6 8v8" />
+              <circle cx="4" cy="12" r="1.5" fill="currentColor" />
+              <circle cx="13" cy="12" r="1.5" fill="currentColor" />
+              <circle cx="21" cy="12" r="1.5" fill="currentColor" />
+            </svg>
           </DistributionButton>
         </div>
       </div>

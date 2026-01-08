@@ -25,8 +25,6 @@ export function TopToolbar() {
     setTool,
     selection,
     deleteShapes,
-    viewport,
-    setViewport,
     undo,
     redo,
     past,
@@ -46,18 +44,6 @@ export function TopToolbar() {
       deleteShapes(selection.shapeIds)
     }
   }, [selection.shapeIds, deleteShapes])
-
-  const handleZoomIn = useCallback(() => {
-    setViewport({ zoom: Math.min(viewport.zoom * 1.2, 5) })
-  }, [viewport.zoom, setViewport])
-
-  const handleZoomOut = useCallback(() => {
-    setViewport({ zoom: Math.max(viewport.zoom / 1.2, 0.1) })
-  }, [viewport.zoom, setViewport])
-
-  const handleZoomReset = useCallback(() => {
-    setViewport({ zoom: 1, x: 0, y: 0 })
-  }, [setViewport])
 
   return (
     <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50">
@@ -132,24 +118,6 @@ export function TopToolbar() {
             onClick={handleDelete}
             disabled={selection.shapeIds.length === 0}
             danger
-          />
-        </ToolbarGroup>
-
-        <ToolbarDivider />
-
-        <ToolbarGroup>
-          <IconButton 
-            icon={Minus} 
-            label="Zoom Out" 
-            onClick={handleZoomOut}
-            size="small"
-          />
-          <ZoomDisplay zoom={viewport.zoom} onClick={handleZoomReset} />
-          <IconButton 
-            icon={Plus} 
-            label="Zoom In" 
-            onClick={handleZoomIn}
-            size="small"
           />
         </ToolbarGroup>
       </div>
@@ -251,34 +219,5 @@ function ToolbarGroup({ children }: { children: React.ReactNode }) {
 function ToolbarDivider() {
   return (
     <div className="w-px h-5 bg-gray-200 mx-1" />
-  )
-}
-
-function ZoomDisplay({ zoom, onClick }: { zoom: number; onClick?: () => void }) {
-  return (
-    <button
-      className={clsx(
-        'flex items-center justify-center',
-        'min-w-[52px] h-7 px-2',
-        'text-xs font-medium',
-        'text-gray-600',
-        'bg-gray-50 hover:bg-gray-100',
-        'rounded-md',
-        'cursor-pointer transition-colors duration-150',
-        'border border-gray-200'
-      )}
-      onClick={onClick}
-    >
-      {Math.round(zoom * 100)}%
-    </button>
-  )
-}
-
-function Plus({ className }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-      <line x1="12" y1="5" x2="12" y2="19" />
-      <line x1="5" y1="12" x2="19" y2="12" />
-    </svg>
   )
 }

@@ -1,5 +1,5 @@
 import { useDiagramStore } from '../../store/diagramStore'
-import { Maximize2, Minimize2, Grid3X3 } from 'lucide-react'
+import { Minus, Plus, Grid3X3 } from 'lucide-react'
 import { clsx } from 'clsx'
 import { LAYOUT } from '../../constants/layout'
 
@@ -64,7 +64,7 @@ export function ZoomControls() {
       }}
       >
         <ControlButton 
-          icon={Minimize2} 
+          icon={Minus} 
           onClick={handleZoomOut}
           title="Zoom Out"
         />
@@ -84,7 +84,7 @@ export function ZoomControls() {
           {Math.round(viewport.zoom * 100)}%
         </button>
         <ControlButton 
-          icon={Maximize2} 
+          icon={Plus} 
           onClick={handleZoomIn}
           title="Zoom In"
         />
