@@ -44,6 +44,8 @@ export function Canvas() {
   const lassoPointsRef = useRef<Point[]>([])
   const [lassoPointsForRender, setLassoPointsForRender] = useState<Point[]>([])
   const [dragStartPos, setDragStartPos] = useState<Point | null>(null)
+  const [isDragging, setIsDragging] = useState(false)
+  const [hoveredShapeId, setHoveredShapeId] = useState<string | null>(null)
   const isPanningRef = useRef(false)
   const panStartRef = useRef<Point | null>(null)
   const panStartViewportRef = useRef({ x: 0, y: 0 })
@@ -129,6 +131,7 @@ export function Canvas() {
           setSelection({ shapeIds: [clickedShape.id], selectionType: 'single' })
         }
         setDragStartPos({ x, y })
+        setIsDragging(false)
       } else {
         setSelection({ shapeIds: [], selectionType: 'none' })
       }
@@ -173,15 +176,25 @@ export function Canvas() {
       const dy = y - dragStartPos.y
 
       if (Math.abs(dx) > 3 || Math.abs(dy) > 3) {
-        selection.shapeIds.forEach(id => {
-          const shape = shapes.find(s => s.id === id)
-          if (shape) {
-            updateShape(id, { x: shape.x + dx, y: shape.y + dy })
-          }
-        })
-        setDragStartPos({ x, y })
+        if (!isDragging) {
+          setIsDragging(true)
+        }
+        if (isDragging) {
+          selection.shapeIds.forEach(id => {
+            const shape = shapes.find(s => s.id === id)
+            if (shape) {
+              updateShape(id, { x: shape.x + dx, y: shape.y + dy })
+            }
+          })
+          setDragStartPos({ x, y })
+        }
       }
       return
+    }
+
+    if (!isPanningRef.current && currentTool === 'select-click' && !dragStartPos) {
+      const hoveredShape = shapes.find(s => hitTestPoint(s, x, y))
+      setHoveredShapeId(hoveredShape?.id || null)
     }
 
     if (drawing.isDrawing) {
@@ -222,6 +235,7 @@ export function Canvas() {
     if (!canvasRef.current) return
 
     setDragStartPos(null)
+    setIsDragging(false)
 
     if (!drawing.isDrawing) return
 
@@ -335,7 +349,20 @@ export function Canvas() {
     height: Math.abs(lassoPointsForRender[lassoPointsForRender.length - 1].y - lassoPointsForRender[0].y),
   } : null
 
-  const isPanning = isPanningRef.current || currentTool === 'pan'
+  const getCursor = () => {
+    if (isPanningRef.current || currentTool === 'pan') {
+      return 'cursor-grab active:cursor-grabbing'
+    }
+
+    if (['select-click', 'select-box', 'select-lasso'].includes(currentTool)) {
+      if (currentTool === 'select-click' && hoveredShapeId && selection.shapeIds.includes(hoveredShapeId)) {
+        return 'cursor-move'
+      }
+      return 'cursor-default'
+    }
+
+    return 'cursor-crosshair'
+  }
 
   return (
     <div className="w-full h-full overflow-hidden bg-gray-50 relative">
@@ -346,7 +373,7 @@ export function Canvas() {
         height="100%"
         className={clsx(
           'w-full h-full',
-          isPanning ? 'cursor-grab active:cursor-grabbing' : 'cursor-crosshair'
+          getCursor()
         )}
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMoveWithResize}
