@@ -231,32 +231,18 @@ function AlignmentSection({
             disabled={!canDistribute}
             title="Distribute vertically - space shapes evenly top to bottom"
           >
-            <div className="flex flex-col items-center gap-0.5">
-              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M12 2v20M8 6h8M8 12h8M8 18h8" />
-              </svg>
-              <div className="flex items-center gap-0.5">
-                <div className="w-1.5 h-1.5 bg-current rounded-full" />
-                <div className="w-1.5 h-1.5 bg-current rounded-full" />
-                <div className="w-1.5 h-1.5 bg-current rounded-full" />
-              </div>
-            </div>
+            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M12 2v20M8 6h8M8 12h8M8 18h8" />
+            </svg>
           </DistributionButton>
           <DistributionButton
             onClick={() => onDistribute('horizontal')}
             disabled={!canDistribute}
             title="Distribute horizontally - space shapes evenly left to right"
           >
-            <div className="flex flex-col items-center gap-0.5">
-              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M2 12h20M6 8v8M12 8v8M18 8v8" />
-              </svg>
-              <div className="flex flex-col items-center gap-0.5">
-                <div className="w-1.5 h-1.5 bg-current rounded-full" />
-                <div className="w-1.5 h-1.5 bg-current rounded-full" />
-                <div className="w-1.5 h-1.5 bg-current rounded-full" />
-              </div>
-            </div>
+            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M2 12h20M6 8v8M12 8v8M18 8v8" />
+            </svg>
           </DistributionButton>
         </div>
       </div>
