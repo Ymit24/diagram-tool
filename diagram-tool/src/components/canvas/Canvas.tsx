@@ -51,6 +51,7 @@ export function Canvas() {
   const dragStartRef = useRef<Point | null>(null)
   const lastMouseRef = useRef<Point | null>(null)
   const isDraggingRef = useRef(false)
+  const lastWheelRef = useRef<{ deltaX: number; deltaY: number; timestamp: number } | null>(null)
   const [, forceUpdate] = useState({})
 
   const {
@@ -90,21 +91,65 @@ export function Canvas() {
       }
     }
 
+    const handleGestureStart = (e: GestureEvent) => {
+      if (e.ctrlKey) {
+        e.preventDefault()
+      }
+    }
+
+    const handleGestureChange = (e: GestureEvent) => {
+      if (e.ctrlKey) {
+        e.preventDefault()
+        const rect = canvasRef.current?.getBoundingClientRect()
+        if (rect) {
+          const mouseX = e.clientX - rect.left
+          const mouseY = e.clientY - rect.top
+          const newZoom = Math.min(Math.max(viewport.zoom * e.scale, 0.1), 5)
+          const zoomRatio = newZoom / viewport.zoom
+          setViewport({
+            zoom: newZoom,
+            x: mouseX - (mouseX - viewport.x) * zoomRatio,
+            y: mouseY - (mouseY - viewport.y) * zoomRatio,
+          })
+        }
+      }
+    }
+
     window.addEventListener('keydown', handleKeyDown)
     window.addEventListener('keyup', handleKeyUp)
+    window.addEventListener('gesturestart', handleGestureStart)
+    window.addEventListener('gesturechange', handleGestureChange)
 
     return () => {
       window.removeEventListener('keydown', handleKeyDown)
       window.removeEventListener('keyup', handleKeyUp)
+      window.removeEventListener('gesturestart', handleGestureStart)
+      window.removeEventListener('gesturechange', handleGestureChange)
     }
-  }, [])
+  }, [viewport, setViewport])
 
   const handleWheel = useCallback((e: React.WheelEvent) => {
-    if (e.ctrlKey || e.metaKey) {
+    const isCtrlZoom = e.ctrlKey || e.metaKey
+
+    if (isCtrlZoom) {
       e.preventDefault()
-      const delta = e.deltaY > 0 ? 0.9 : 1.1
-      const newZoom = Math.min(Math.max(viewport.zoom * delta, 0.1), 5)
-      setViewport({ zoom: newZoom })
+      const zoomFactor = e.deltaY > 0 ? 0.9 : 1.1
+      const newZoom = Math.min(Math.max(viewport.zoom * zoomFactor, 0.1), 5)
+
+      const rect = canvasRef.current?.getBoundingClientRect()
+      if (rect) {
+        const mouseX = e.clientX - rect.left
+        const mouseY = e.clientY - rect.top
+
+        const zoomRatio = newZoom / viewport.zoom
+        setViewport({
+          zoom: newZoom,
+          x: mouseX - (mouseX - viewport.x) * zoomRatio,
+          y: mouseY - (mouseY - viewport.y) * zoomRatio,
+        })
+      } else {
+        setViewport({ zoom: newZoom })
+      }
     } else {
       setViewport({
         x: viewport.x - e.deltaX,
