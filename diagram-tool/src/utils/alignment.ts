@@ -1,52 +1,11 @@
 import type { DiagramShape } from '../types/diagram'
+import { getShapeBounds, getBoundingBox, type BoundingBox } from './shapeBounds'
 
 export type AlignmentType = 'left' | 'center' | 'right' | 'top' | 'middle' | 'bottom'
 export type DistributionType = 'horizontal' | 'vertical'
 
-export interface BoundingBox {
-  minX: number
-  minY: number
-  maxX: number
-  maxY: number
-  centerX: number
-  centerY: number
-  width: number
-  height: number
-}
-
-export function getShapeBounds(shape: DiagramShape): { x: number; y: number; width: number; height: number } {
-  if (shape.type === 'line' || shape.type === 'arrow') {
-    const minX = Math.min(shape.x, shape.x + shape.x2)
-    const minY = Math.min(shape.y, shape.y + shape.y2)
-    return {
-      x: minX,
-      y: minY,
-      width: Math.abs(shape.x2),
-      height: Math.abs(shape.y2),
-    }
-  }
-  return { x: shape.x, y: shape.y, width: shape.width, height: shape.height }
-}
-
-export function getBoundingBox(shapes: DiagramShape[]): BoundingBox {
-  const bounds = shapes.reduce((acc, shape) => {
-    const shapeBounds = getShapeBounds(shape)
-    return {
-      minX: Math.min(acc.minX, shapeBounds.x),
-      minY: Math.min(acc.minY, shapeBounds.y),
-      maxX: Math.max(acc.maxX, shapeBounds.x + shapeBounds.width),
-      maxY: Math.max(acc.maxY, shapeBounds.y + shapeBounds.height),
-    }
-  }, { minX: Infinity, minY: Infinity, maxX: -Infinity, maxY: -Infinity })
-
-  return {
-    ...bounds,
-    centerX: (bounds.minX + bounds.maxX) / 2,
-    centerY: (bounds.minY + bounds.maxY) / 2,
-    width: bounds.maxX - bounds.minX,
-    height: bounds.maxY - bounds.minY,
-  }
-}
+export { getShapeBounds, getBoundingBox }
+export type { BoundingBox }
 
 export function getCenterPoint(shape: DiagramShape): { x: number; y: number } {
   const bounds = getShapeBounds(shape)

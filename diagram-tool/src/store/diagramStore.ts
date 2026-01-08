@@ -7,10 +7,9 @@ import type {
   DrawingState,
   ShapeStyle
 } from '../types/diagram'
-import type { HistoryActionType, HistoryEntry } from '../types/history'
 import { alignShapes, distributeShapes, type AlignmentType, type DistributionType } from '../utils/alignment'
-
-const MAX_HISTORY = 50
+import { calculateResizeUpdate, applyResizeUpdate, type ResizeHandle } from '../utils/resize'
+import { createHistoryEntry, pushHistory, undo as undoHistory, redo as redoHistory } from '../utils/history'
 
 interface DiagramState {
   shapes: DiagramShape[]
@@ -20,10 +19,10 @@ interface DiagramState {
   viewport: Viewport
   drawing: DrawingState
   resizingShapeId: string | null
-  resizeHandle: string | null
+  resizeHandle: ResizeHandle | null
   resizeStartShape: DiagramShape | null
-  past: HistoryEntry[]
-  future: HistoryEntry[]
+  past: ReturnType<typeof createHistoryEntry>[]
+  future: ReturnType<typeof createHistoryEntry>[]
 
   setTool: (tool: ToolType) => void
   setViewport: (viewport: Partial<Viewport>) => void
@@ -37,7 +36,7 @@ interface DiagramState {
   updateDrawing: (x: number, y: number) => void
   finishDrawing: () => void
   cancelDrawing: () => void
-  startResize: (shapeId: string, handle: string) => void
+  startResize: (shapeId: string, handle: ResizeHandle) => void
   updateResize: (currentX: number, currentY: number) => void
   endResize: () => void
   undo: () => void
@@ -46,14 +45,6 @@ interface DiagramState {
   alignShapes: (alignment: AlignmentType) => void
   distributeShapes: (distribution: DistributionType) => void
 }
-
-const recordHistory = (state: DiagramState, type: HistoryActionType, description: string): HistoryEntry => ({
-  type,
-  shapes: [...state.shapes],
-  selection: { ...state.selection },
-  timestamp: Date.now(),
-  description,
-})
 
 export const useDiagramStore = create<DiagramState>((set) => ({
   shapes: [],
@@ -81,21 +72,20 @@ export const useDiagramStore = create<DiagramState>((set) => ({
   })),
 
   addShape: (shape) => set((state) => {
-    const entry = recordHistory(state, 'add', 'Add shape')
-    const newPast = [...state.past, entry].slice(-MAX_HISTORY)
+    const entry = createHistoryEntry(state, 'add', 'Add shape')
     return {
       shapes: [...state.shapes, shape] as DiagramShape[],
-      past: newPast,
+      past: pushHistory(state.past, entry),
       future: [],
     }
   }),
 
   updateShape: (id, updates, skipHistory = false) => set((state) => {
     let newPast = state.past
-    let newFuture = state.future
+    let newFuture: typeof state.future = []
     if (!skipHistory) {
-      const entry = recordHistory(state, 'update', 'Update shape')
-      newPast = [...state.past, entry].slice(-MAX_HISTORY)
+      const entry = createHistoryEntry(state, 'update', 'Update shape')
+      newPast = pushHistory(state.past, entry)
       newFuture = []
     }
     return {
@@ -107,12 +97,11 @@ export const useDiagramStore = create<DiagramState>((set) => ({
 
   deleteShapes: (ids) => set((state) => {
     if (ids.length === 0) return state
-    const entry = recordHistory(state, 'delete', 'Delete shapes')
-    const newPast = [...state.past, entry].slice(-MAX_HISTORY)
+    const entry = createHistoryEntry(state, 'delete', 'Delete shapes')
     return {
       shapes: state.shapes.filter((s) => !ids.includes(s.id)) as DiagramShape[],
       selection: { shapeIds: [], selectionType: 'none' },
-      past: newPast,
+      past: pushHistory(state.past, entry),
       future: [],
     }
   }),
@@ -121,11 +110,10 @@ export const useDiagramStore = create<DiagramState>((set) => ({
     if (state.selection.shapeIds.length === 0 && selection.shapeIds?.length === 0) {
       return state
     }
-    const entry = recordHistory(state, 'select', 'Select shapes')
-    const newPast = [...state.past, entry].slice(-MAX_HISTORY)
+    const entry = createHistoryEntry(state, 'select', 'Select shapes')
     return {
       selection: { ...state.selection, ...selection },
-      past: newPast,
+      past: pushHistory(state.past, entry),
       future: [],
     }
   }),
@@ -136,15 +124,14 @@ export const useDiagramStore = create<DiagramState>((set) => ({
 
   updateSelectedShapes: (updates) => set((state) => {
     if (state.selection.shapeIds.length === 0) return state
-    const entry = recordHistory(state, 'update', 'Update shapes')
-    const newPast = [...state.past, entry].slice(-MAX_HISTORY)
+    const entry = createHistoryEntry(state, 'update', 'Update shapes')
     return {
       shapes: state.shapes.map((s) =>
         state.selection.shapeIds.includes(s.id)
           ? { ...s, style: { ...s.style, ...updates } }
           : s
       ) as DiagramShape[],
-      past: newPast,
+      past: pushHistory(state.past, entry),
       future: [],
     }
   }),
@@ -175,110 +162,54 @@ export const useDiagramStore = create<DiagramState>((set) => ({
   }),
 
   updateResize: (currentX, currentY) => set((state) => {
-    if (!state.resizeStartShape || !state.resizingShapeId) return {}
+    if (!state.resizeStartShape || !state.resizingShapeId || !state.resizeHandle) return {}
 
-    const startShape = state.resizeStartShape
-    const startX = startShape.x
-    const startY = startShape.y
-    const startW = startShape.width
-    const startH = startShape.height
-
-    const updates: Record<string, number | string> = {}
-
-    if (startShape.type === 'line' || startShape.type === 'arrow') {
-      if (state.resizeHandle === 'start') {
-        updates.x = currentX
-        updates.y = currentY
-      } else {
-        updates.x2 = currentX - startX
-        updates.y2 = currentY - startY
-      }
-    } else {
-      switch (state.resizeHandle) {
-        case 'nw':
-          updates.x = currentX
-          updates.y = currentY
-          updates.width = startX + startW - currentX
-          updates.height = startY + startH - currentY
-          break
-        case 'n':
-          updates.y = currentY
-          updates.height = startY + startH - currentY
-          break
-        case 'ne':
-          updates.y = currentY
-          updates.width = currentX - startX
-          updates.height = startY + startH - currentY
-          break
-        case 'e':
-          updates.width = currentX - startX
-          break
-        case 'se':
-          updates.width = currentX - startX
-          updates.height = currentY - startY
-          break
-        case 's':
-          updates.height = currentY - startY
-          break
-        case 'sw':
-          updates.x = currentX
-          updates.width = startX + startW - currentX
-          updates.height = currentY - startY
-          break
-        case 'w':
-          updates.x = currentX
-          updates.width = startX + startW - currentX
-          break
-      }
-    }
-
-    const constrainedUpdates: Partial<DiagramShape> = {}
-    for (const [key, value] of Object.entries(updates)) {
-      if (typeof value === 'number' && value >= 10 || (typeof value === 'number' && key !== 'width' && key !== 'height')) {
-        (constrainedUpdates as Record<string, number | string>)[key] = value
-      }
-    }
+    const { constrained } = calculateResizeUpdate(
+      state.resizeStartShape,
+      state.resizeHandle,
+      currentX,
+      currentY
+    )
 
     return {
       shapes: state.shapes.map(s => {
         if (s.id !== state.resizingShapeId) return s
-        return { ...s, ...constrainedUpdates }
+        return applyResizeUpdate(s, constrained)
       }) as DiagramShape[]
     }
   }),
 
   endResize: () => set((state) => {
     if (!state.resizingShapeId) return state
-    const entry = recordHistory(state, 'update', 'Resize shape')
-    const newPast = [...state.past, entry].slice(-MAX_HISTORY)
+    const entry = createHistoryEntry(state, 'update', 'Resize shape')
     return {
       resizingShapeId: null,
       resizeHandle: null,
       resizeStartShape: null,
-      past: newPast,
+      past: pushHistory(state.past, entry),
       future: [],
     }
   }),
 
   undo: () => set((state) => {
-    if (state.past.length === 0) return state
-    const entry = state.past[state.past.length - 1]
+    const result = undoHistory(state.past, state.future, state.shapes, state.selection)
+    if (!result) return state
     return {
-      shapes: entry.shapes,
-      selection: entry.selection,
-      past: state.past.slice(0, -1),
-      future: [entry, ...state.future],
+      shapes: result.shapes,
+      selection: result.selection,
+      past: result.past,
+      future: result.future,
     }
   }),
 
   redo: () => set((state) => {
-    if (state.future.length === 0) return state
-    const entry = state.future[0]
+    const result = redoHistory(state.past, state.future, state.shapes, state.selection)
+    if (!result) return state
     return {
-      shapes: entry.shapes,
-      selection: entry.selection,
-      past: [...state.past, entry],
-      future: state.future.slice(1),
+      shapes: result.shapes,
+      selection: result.selection,
+      past: result.past,
+      future: result.future,
     }
   }),
 
@@ -290,13 +221,13 @@ export const useDiagramStore = create<DiagramState>((set) => ({
     const selectedShapes = state.shapes.filter(s => state.selection.shapeIds.includes(s.id))
     const updates = alignShapes(selectedShapes, alignment)
 
-    const entry = recordHistory(state, 'update', `Align ${alignment}`)
+    const entry = createHistoryEntry(state, 'update', `Align ${alignment}`)
     return {
       shapes: state.shapes.map(s => {
         const update = updates.get(s.id)
         return update ? { ...s, ...update } : s
       }) as DiagramShape[],
-      past: [...state.past, entry].slice(-MAX_HISTORY),
+      past: pushHistory(state.past, entry),
       future: [],
     }
   }),
@@ -309,13 +240,13 @@ export const useDiagramStore = create<DiagramState>((set) => ({
 
     if (updates.size === 0) return state
 
-    const entry = recordHistory(state, 'update', `Distribute ${distribution}`)
+    const entry = createHistoryEntry(state, 'update', `Distribute ${distribution}`)
     return {
       shapes: state.shapes.map(s => {
         const update = updates.get(s.id)
         return update ? { ...s, ...update } : s
       }) as DiagramShape[],
-      past: [...state.past, entry].slice(-MAX_HISTORY),
+      past: pushHistory(state.past, entry),
       future: [],
     }
   }),
