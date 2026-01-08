@@ -129,7 +129,19 @@ export function Canvas() {
       const clickedShape = shapes.find(s => hitTestPoint(s, x, y))
 
       if (clickedShape) {
-        if (!selection.shapeIds.includes(clickedShape.id)) {
+        if (e.shiftKey) {
+          const isSelected = selection.shapeIds.includes(clickedShape.id)
+          let newShapeIds
+          if (isSelected) {
+            newShapeIds = selection.shapeIds.filter(id => id !== clickedShape.id)
+          } else {
+            newShapeIds = [...selection.shapeIds, clickedShape.id]
+          }
+          const selectionType = newShapeIds.length > 1 ? 'multiple'
+                               : newShapeIds.length === 1 ? 'single'
+                               : 'none'
+          setSelection({ shapeIds: newShapeIds, selectionType })
+        } else {
           setSelection({ shapeIds: [clickedShape.id], selectionType: 'single' })
         }
         dragStartRef.current = { x, y }
