@@ -4,6 +4,8 @@ import { screenToCanvas } from '../utils/coordinates'
 import { hitTestPoint, hitTestBox, hitTestLasso } from '../utils/hitTest'
 import { createRectangle, createCircle, createLine, createArrow } from '../utils/shape'
 
+const MIN_SHAPE_SIZE = 5
+
 interface Point {
   x: number
   y: number
@@ -218,13 +220,33 @@ export function useCanvasMouseEvents({
     }
 
     let newShape: DiagramShape | null = null
+    const width = Math.abs(x - startX)
+    const height = Math.abs(y - startY)
+    const isRectangleOrCircle = tool === 'rectangle' || tool === 'circle'
+    const isLineOrArrow = tool === 'line' || tool === 'arrow'
+    const length = Math.sqrt(Math.pow(x - startX, 2) + Math.pow(y - startY, 2))
+
+    const minCanvasSize = MIN_SHAPE_SIZE / viewport.zoom
+    const meetsMinimumSize = isRectangleOrCircle
+      ? width >= minCanvasSize && height >= minCanvasSize
+      : isLineOrArrow
+        ? length >= minCanvasSize
+        : true
+
+    if (!meetsMinimumSize) {
+      actions.finishDrawing()
+      lassoPointsRef.current = []
+      setLassoPointsForRender([])
+      return
+    }
+
     switch (tool) {
       case 'rectangle':
         newShape = createRectangle(
           Math.min(startX, x),
           Math.min(startY, y),
-          Math.abs(x - startX),
-          Math.abs(y - startY),
+          width,
+          height,
           currentToolOptions
         )
         break
@@ -232,8 +254,8 @@ export function useCanvasMouseEvents({
         newShape = createCircle(
           Math.min(startX, x),
           Math.min(startY, y),
-          Math.abs(x - startX),
-          Math.abs(y - startY),
+          width,
+          height,
           currentToolOptions
         )
         break
