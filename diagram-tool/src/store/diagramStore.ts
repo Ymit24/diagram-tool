@@ -28,7 +28,7 @@ interface DiagramState {
   setTool: (tool: ToolType) => void
   setViewport: (viewport: Partial<Viewport>) => void
   addShape: (shape: DiagramShape) => void
-  updateShape: (id: string, updates: Partial<DiagramShape>) => void
+  updateShape: (id: string, updates: Partial<DiagramShape>, skipHistory?: boolean) => void
   deleteShapes: (ids: string[]) => void
   setSelection: (selection: Partial<Selection>) => void
   updateToolOptions: (options: Partial<ShapeStyle>) => void
@@ -90,13 +90,18 @@ export const useDiagramStore = create<DiagramState>((set) => ({
     }
   }),
 
-  updateShape: (id, updates) => set((state) => {
-    const entry = recordHistory(state, 'update', 'Update shape')
-    const newPast = [...state.past, entry].slice(-MAX_HISTORY)
+  updateShape: (id, updates, skipHistory = false) => set((state) => {
+    let newPast = state.past
+    let newFuture = state.future
+    if (!skipHistory) {
+      const entry = recordHistory(state, 'update', 'Update shape')
+      newPast = [...state.past, entry].slice(-MAX_HISTORY)
+      newFuture = []
+    }
     return {
       shapes: state.shapes.map((s) => s.id === id ? { ...s, ...updates } : s) as DiagramShape[],
       past: newPast,
-      future: [],
+      future: newFuture,
     }
   }),
 
