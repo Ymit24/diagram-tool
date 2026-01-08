@@ -13,7 +13,12 @@ export function SaveStatusIndicator() {
   }
 
   return (
-    <div className="fixed bottom-6 left-6 z-40">
+    <div
+      className="fixed bottom-6 left-6 z-40"
+      role="status"
+      aria-live={status === 'error' ? 'assertive' : 'polite'}
+      aria-atomic="true"
+    >
       <div className="flex items-center gap-2 bg-white/90 backdrop-blur-sm rounded-full px-3 py-1.5 shadow-sm border border-gray-100 transition-all duration-300">
         {status === 'saving' && (
           <div className="w-3 h-3 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin" />
