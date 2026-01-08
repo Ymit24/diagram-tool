@@ -79,6 +79,8 @@ export const useDiagramStore = create<DiagramState>((set) => ({
     viewport: data.viewport,
     currentTool: data.currentTool,
     currentToolOptions: data.currentToolOptions,
+    past: [],
+    future: [],
   }),
 
   addShape: (shape) => set((state) => {
